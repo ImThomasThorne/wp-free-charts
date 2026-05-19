@@ -1,0 +1,13 @@
+# Dependencies — never commit these
+node_modules/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
+
+# The build/ folder must be committed so Git Updater can serve
+# the compiled plugin directly from a GitHub release zip.
+# Do NOT add build/ here.

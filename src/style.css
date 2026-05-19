@@ -1,0 +1,113 @@
+/* ── Block wrapper ──────────────────────────────────────────────────────────── */
+.wfc-block {
+	box-sizing: border-box;
+	width: 100%;
+	display: block;
+}
+
+/* ── Title ───────────────────────────────────────────────────────────────────── */
+.wfc-chart-title {
+	line-height: 1.3;
+	margin: 0 0 14px;
+	word-break: break-word;
+}
+
+/* ── Canvas container ────────────────────────────────────────────────────────── */
+.wfc-chart-container {
+	position: relative;
+	width: 100%;
+}
+
+.wfc-chart-container canvas {
+	display: block;
+	max-width: 100%;
+}
+
+/* ── Filter buttons ──────────────────────────────────────────────────────────── */
+.wfc-filters {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-top: 18px;
+	justify-content: center;
+}
+
+.wfc-filter-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 5px 16px;
+	background: #f0f0f1;
+	border: 1px solid #c8c8c8;
+	border-radius: 24px;
+	font-size: 13px;
+	color: #333;
+	cursor: pointer;
+	transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
+	font-family: inherit;
+	line-height: 1.4;
+}
+
+.wfc-filter-btn:hover {
+	background: #e2e2e3;
+	border-color: #aaa;
+}
+
+.wfc-filter-btn--active {
+	background: #007cba;
+	border-color: #007cba;
+	color: #fff;
+}
+
+.wfc-filter-btn--active:hover {
+	background: #005f8e;
+	border-color: #005f8e;
+}
+
+/* Style the colour dot inside filter buttons when the button has a colour indicator */
+.wfc-filter-btn__dot {
+	display: inline-block;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────────── */
+
+/* Tablet: cap chart at a sensible height */
+@media ( max-width: 768px ) {
+	.wfc-chart-container {
+		height: clamp( 220px, 55vw, var( --wfc-height, 400px ) ) !important;
+	}
+
+	.wfc-filters {
+		gap: 6px;
+	}
+
+	.wfc-filter-btn {
+		font-size: 12px;
+		padding: 4px 12px;
+	}
+}
+
+/* Mobile: narrower constraint, larger relative proportion */
+@media ( max-width: 480px ) {
+	.wfc-chart-container {
+		height: clamp( 180px, 65vw, var( --wfc-height, 400px ) ) !important;
+	}
+
+	.wfc-chart-title {
+		font-size: clamp( 16px, 4vw, 32px );
+	}
+
+	.wfc-filters {
+		justify-content: flex-start;
+		gap: 5px;
+	}
+
+	.wfc-filter-btn {
+		font-size: 11px;
+		padding: 3px 10px;
+	}
+}

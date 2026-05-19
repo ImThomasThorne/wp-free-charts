@@ -1,0 +1,178 @@
+export function generateUniqueId() {
+	return 'wfc-' + Math.random().toString( 36 ).substr( 2, 9 ) + Date.now().toString( 36 );
+}
+
+export function getDefaultColors() {
+	return [
+		'#4e79a7', '#f28e2b', '#e15759', '#76b7b2',
+		'#59a14f', '#edc948', '#b07aa1', '#ff9da7',
+		'#9c755f', '#bab0ac',
+	];
+}
+
+function hexToRgba( hex, alpha ) {
+	if ( ! hex ) return `rgba(78,121,167,${ alpha })`;
+	const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec( hex );
+	if ( ! r ) return hex;
+	return `rgba(${ parseInt( r[1], 16 ) },${ parseInt( r[2], 16 ) },${ parseInt( r[3], 16 ) },${ alpha })`;
+}
+
+export function tableDataToChartConfig( {
+	tableData,
+	chartType,
+	datasetColors,
+	showLegend,
+	legendPosition,
+	legendAlign,
+	showTooltips,
+	enableAnimation,
+	stacked,
+	tension,
+	pointRadius,
+	fillArea,
+	barBorderRadius,
+	indexAxis,
+	cutout,
+	showGridX,
+	showGridY,
+	fontSize,
+	fontFamily,
+	fontWeight,
+	xAxisLabel,
+	yAxisLabel,
+	gridColor,
+	tickColor,
+} ) {
+	if ( ! tableData || tableData.length < 2 ) {
+		return { type: 'bar', data: { labels: [], datasets: [] }, options: {} };
+	}
+
+	const isPieType  = [ 'pie', 'doughnut', 'polarArea' ].includes( chartType );
+	const isRadar    = chartType === 'radar';
+	const isScatter  = chartType === 'scatter';
+	const defaults   = getDefaultColors();
+	const colors     = datasetColors && datasetColors.length ? datasetColors : defaults;
+
+	let labels   = [];
+	let datasets = [];
+
+	if ( isPieType ) {
+		labels = tableData.slice( 1 ).map( ( row ) => String( row[ 0 ] || '' ) );
+		const values    = tableData.slice( 1 ).map( ( row ) => Number( row[ 1 ] ) || 0 );
+		const bgColors  = labels.map( ( _, i ) => colors[ i % colors.length ] );
+
+		datasets = [ {
+			label: String( tableData[ 0 ]?.[ 1 ] || 'Data' ),
+			data:            values,
+			backgroundColor: bgColors,
+			borderColor:     bgColors.map( () => '#ffffff' ),
+			borderWidth:     2,
+			hoverOffset:     8,
+		} ];
+	} else if ( isScatter ) {
+		labels = tableData.slice( 1 ).map( ( row ) => String( row[ 0 ] || '' ) );
+		const numCols = ( tableData[ 0 ]?.length || 3 ) - 1;
+		const dsPairs = Math.floor( numCols / 2 );
+
+		for ( let d = 0; d < dsPairs; d++ ) {
+			const xCol  = 1 + d * 2;
+			const yCol  = xCol + 1;
+			const color = colors[ d % colors.length ];
+
+			datasets.push( {
+				label: String( tableData[ 0 ]?.[ xCol ] || `Series ${ d + 1 }` ),
+				data:            tableData.slice( 1 ).map( ( row ) => ( { x: Number( row[ xCol ] ) || 0, y: Number( row[ yCol ] ) || 0 } ) ),
+				backgroundColor: hexToRgba( color, 0.7 ),
+				borderColor:     color,
+				pointRadius,
+			} );
+		}
+	} else {
+		labels = tableData.slice( 1 ).map( ( row ) => String( row[ 0 ] || '' ) );
+		const numDatasets = ( tableData[ 0 ]?.length || 2 ) - 1;
+
+		for ( let d = 0; d < numDatasets; d++ ) {
+			const color  = colors[ d % colors.length ];
+			const isLine = [ 'line', 'radar' ].includes( chartType );
+			const values = tableData.slice( 1 ).map( ( row ) => {
+				const v = row[ d + 1 ];
+				return ( v === '' || v === null || v === undefined ) ? null : Number( v );
+			} );
+
+			datasets.push( {
+				label:           String( tableData[ 0 ]?.[ d + 1 ] || `Dataset ${ d + 1 }` ),
+				data:            values,
+				backgroundColor: isLine ? hexToRgba( color, fillArea ? 0.15 : 0.8 ) : hexToRgba( color, 0.85 ),
+				borderColor:     color,
+				borderWidth:     isLine ? 2 : 1,
+				fill:            fillArea ? 'origin' : false,
+				tension:         isLine ? tension : 0,
+				pointRadius:     isLine ? pointRadius : undefined,
+				borderRadius:    ( chartType === 'bar' || chartType === 'horizontalBar' ) ? barBorderRadius : 0,
+				pointHoverRadius: isLine ? pointRadius + 3 : undefined,
+			} );
+		}
+	}
+
+	const actualType      = chartType === 'horizontalBar' ? 'bar' : chartType;
+	const actualIndexAxis = chartType === 'horizontalBar' ? 'y' : indexAxis;
+	const hasCartesian    = ! isPieType && ! isRadar;
+
+	const fontSizeNum = typeof fontSize === 'number' ? fontSize : ( parseFloat( fontSize ) || 13 );
+	const fontObj = {
+		family: fontFamily || undefined,
+		size:   fontSizeNum,
+		weight: fontWeight || undefined,
+	};
+
+	const gridC = gridColor  || 'rgba(0,0,0,0.06)';
+	const tickC = tickColor  || undefined;
+
+	const config = {
+		type: actualType,
+		data: { labels, datasets },
+		options: {
+			responsive:          true,
+			maintainAspectRatio: false,
+			animation:           enableAnimation ? { duration: 600 } : false,
+			indexAxis:           actualIndexAxis,
+			plugins: {
+				legend: {
+					display:  showLegend,
+					position: legendPosition || 'top',
+					align:    legendAlign    || 'center',
+					labels:   { font: fontObj, padding: 16, usePointStyle: true },
+				},
+				tooltip: {
+					enabled: showTooltips,
+				},
+			},
+			scales: hasCartesian ? {
+				x: {
+					stacked: stacked,
+					grid:    { display: showGridX, color: gridC },
+					title:   xAxisLabel ? { display: true, text: xAxisLabel, font: fontObj } : undefined,
+					ticks:   { font: fontObj, color: tickC },
+				},
+				y: {
+					stacked: stacked,
+					grid:    { display: showGridY, color: gridC },
+					title:   yAxisLabel ? { display: true, text: yAxisLabel, font: fontObj } : undefined,
+					ticks:   { font: fontObj, color: tickC },
+				},
+			} : isRadar ? {
+				r: {
+					ticks:       { font: fontObj, backdropColor: 'transparent', color: tickC },
+					pointLabels: { font: fontObj, color: tickC },
+					grid:        { color: gridC },
+				},
+			} : {},
+		},
+	};
+
+	if ( chartType === 'doughnut' ) {
+		config.options.cutout = `${ cutout }%`;
+	}
+
+	return config;
+}
