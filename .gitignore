@@ -8,6 +8,6 @@ Thumbs.db
 .vscode/
 .idea/
 
-# The build/ folder must be committed so Git Updater can serve
+# The build/ folder must be committed so the update checker can install
 # the compiled plugin directly from a GitHub release zip.
 # Do NOT add build/ here.

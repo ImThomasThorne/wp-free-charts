@@ -18,22 +18,20 @@ npm run start        # live rebuild on save
 npm run build        # production build
 ```
 
-Source files live in `src/`. The compiled plugin lives in `build/` and **must be committed** — Git Updater serves it directly from the GitHub release zip.
+Source files live in `src/`. The compiled plugin lives in `build/` and **must be committed** — the update checker installs updates from the GitHub release zip, which only contains committed files.
 
 ---
 
 ## Publishing a new release
 
-Follow these steps every time you want to push an update to sites running this plugin via [Git Updater](https://github.com/afragen/git-updater).
+Updates are delivered by the bundled [plugin-update-checker](https://github.com/YahnisElsts/plugin-update-checker) library (in `plugin-update-checker/`). It checks this repository for new GitHub releases — no extra plugin is needed on the site. Follow these steps every time you want to push an update.
 
 ### 1. Bump the version number
 
-Edit `wp-free-charts.php` and update **both** places:
+Edit `wp-free-charts.php` and update the `Version` line in the plugin header:
 
 ```php
- * Version:           1.0.1          ← plugin header
-...
-define( 'WP_FREE_CHARTS_VERSION', '1.0.1' );   ← constant
+ * Version:           1.0.1
 ```
 
 Use [semantic versioning](https://semver.org/): `MAJOR.MINOR.PATCH`
@@ -64,9 +62,9 @@ On GitHub: **Releases → Draft a new release**
 - **Description:** brief change notes (shown in the WP update screen)
 - Click **Publish release**
 
-Git Updater reads the `Version` header in the tagged zip and surfaces the update in **Dashboard → Updates** on any site where the plugin is installed.
+The update checker compares the latest release tag against the installed `Version` header and surfaces the update in **Dashboard → Updates** on any site where the plugin is installed. It checks every 12 hours; use **Check for updates** on the Plugins screen to force a check.
 
-> **Note:** Do not prefix the tag with `v` — Git Updater matches it against the bare version number in the plugin header.
+> **Note:** Use the bare version number for the tag (e.g. `1.0.7`). A `v` prefix is tolerated, but keeping tags identical to the `Version` header avoids confusion.
 
 ---
 
@@ -75,7 +73,8 @@ Git Updater reads the `Version` header in the tagged zip and surfaces the update
 | Path | Committed? | Reason |
 |---|---|---|
 | `src/` | Yes | Source files |
-| `build/` | Yes | Compiled output — required for Git Updater |
+| `build/` | Yes | Compiled output — required, since updates install straight from the release zip |
+| `plugin-update-checker/` | Yes | Bundled update checker library |
 | `wp-free-charts.php` | Yes | Main plugin file |
 | `package.json` / `package-lock.json` | Yes | Dependency manifest |
 | `node_modules/` | **No** | Auto-generated; install with `npm install --include=dev` |
