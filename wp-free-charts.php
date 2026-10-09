@@ -30,3 +30,5 @@ function wp_free_charts_register_block() {
 	register_block_type( WP_FREE_CHARTS_PATH . 'build' );
 }
 add_action( 'init', 'wp_free_charts_register_block' );
+
+//testcomment
