@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "WordPress Gutenberg block for interactive charts",
   "scripts": {
-    "build": "./node_modules/.bin/wp-scripts build",
-    "start": "./node_modules/.bin/wp-scripts start",
-    "format": "./node_modules/.bin/wp-scripts format",
-    "lint:js": "./node_modules/.bin/wp-scripts lint-js",
-    "lint:css": "./node_modules/.bin/wp-scripts lint-style"
+    "build": "wp-scripts build",
+    "start": "wp-scripts start",
+    "format": "wp-scripts format",
+    "lint:js": "wp-scripts lint-js",
+    "lint:css": "wp-scripts lint-style"
   },
   "dependencies": {
     "@babel/runtime": "^7.29.2",

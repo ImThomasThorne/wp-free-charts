@@ -25,6 +25,7 @@ export default function save( { attributes } ) {
 		datasetColors, showGridX, showGridY, gridColor, tickColor,
 		showTooltips, enableAnimation, stacked, xAxisLabel, yAxisLabel,
 		tension, pointRadius, fillArea, barBorderRadius, indexAxis, cutout,
+		customRange, rangeMin, rangeMax, rangeStep,
 		uniqueId,
 	} = attributes;
 
@@ -82,6 +83,8 @@ export default function save( { attributes } ) {
 		fontFamily, fontWeight, xAxisLabel, yAxisLabel,
 		enableFilters, filterType, gridColor, tickColor,
 		datasetColors: resolvedColors,
+		// Only serialised when enabled so existing blocks keep validating.
+		...( customRange ? { customRange, rangeMin, rangeMax, rangeStep } : {} ),
 	};
 
 	return (

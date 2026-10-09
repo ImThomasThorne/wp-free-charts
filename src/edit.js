@@ -133,6 +133,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		datasetColors, showGridX, showGridY, gridColor, tickColor,
 		showTooltips, enableAnimation, stacked, xAxisLabel, yAxisLabel,
 		tension, pointRadius, fillArea, barBorderRadius, indexAxis, cutout,
+		customRange, rangeMin, rangeMax, rangeStep,
 		uniqueId,
 	} = attributes;
 
@@ -155,6 +156,7 @@ export default function Edit( { attributes, setAttributes } ) {
 	const isLine    = [ 'line', 'radar' ].includes( chartType );
 	const isBar     = chartType === 'bar' || chartType === 'horizontalBar';
 	const isScatter = chartType === 'scatter';
+	const hasValueScale = ! [ 'pie', 'doughnut' ].includes( chartType );
 
 	const defaults       = getDefaultColors();
 	const numDatasets    = ( tableData[ 0 ]?.length ?? 2 ) - 1;
@@ -170,6 +172,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		stacked, tension, pointRadius, fillArea, barBorderRadius, indexAxis,
 		cutout, showGridX, showGridY, fontSize, fontFamily, fontWeight,
 		xAxisLabel, yAxisLabel, gridColor, tickColor,
+		customRange, rangeMin, rangeMax, rangeStep,
 	} );
 
 	const setColor = ( index, val ) => {
@@ -457,6 +460,38 @@ export default function Edit( { attributes, setAttributes } ) {
 							checked={ fillArea }
 							onChange={ ( v ) => setAttributes( { fillArea: v } ) }
 						/>
+					</> }
+					{ hasValueScale && <>
+						<ToggleControl
+							label={ __( 'Set Value Range', 'wp-free-charts' ) }
+							checked={ customRange }
+							onChange={ ( v ) => setAttributes( { customRange: v } ) }
+							help={ __( 'Fix the start and end of the value axis, e.g. 1 to 6.', 'wp-free-charts' ) }
+						/>
+						{ customRange && <>
+							<TextControl
+								type="number"
+								label={ __( 'Minimum', 'wp-free-charts' ) }
+								value={ rangeMin }
+								onChange={ ( v ) => setAttributes( { rangeMin: v } ) }
+								placeholder={ __( 'Auto', 'wp-free-charts' ) }
+							/>
+							<TextControl
+								type="number"
+								label={ __( 'Maximum', 'wp-free-charts' ) }
+								value={ rangeMax }
+								onChange={ ( v ) => setAttributes( { rangeMax: v } ) }
+								placeholder={ __( 'Auto', 'wp-free-charts' ) }
+							/>
+							<TextControl
+								type="number"
+								label={ __( 'Step', 'wp-free-charts' ) }
+								value={ rangeStep }
+								onChange={ ( v ) => setAttributes( { rangeStep: v } ) }
+								placeholder={ __( 'Auto', 'wp-free-charts' ) }
+								help={ __( 'Gap between axis numbers, e.g. 1 shows 1, 2, 3… Leave blank for automatic.', 'wp-free-charts' ) }
+							/>
+						</> }
 					</> }
 					{ chartType === 'doughnut' && (
 						<RangeControl

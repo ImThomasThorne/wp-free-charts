@@ -17,6 +17,53 @@ function hexToRgba( hex, alpha ) {
 	return `rgba(${ parseInt( r[1], 16 ) },${ parseInt( r[2], 16 ) },${ parseInt( r[3], 16 ) },${ alpha })`;
 }
 
+/** Parse an optional numeric attribute; blank or invalid means "automatic". */
+function toOptionalNumber( v ) {
+	if ( v === '' || v === null || v === undefined ) return undefined;
+	const n = Number( v );
+	return isNaN( n ) ? undefined : n;
+}
+
+/**
+ * Adds 1rem of space between the legend and the chart area.
+ * The extra space is added to the legend box in fit(); for bottom/right
+ * legends the box is then shifted so the gap sits on the chart side.
+ */
+const legendSpacingPlugin = {
+	id: 'wfcLegendSpacing',
+	beforeLayout( chart ) {
+		const legend = chart.legend;
+		if ( ! legend || legend._wfcSpaced ) return;
+		legend._wfcSpaced = true;
+
+		const originalFit = legend.fit;
+		legend.fit = function () {
+			originalFit.call( this );
+			if ( ! this.options.display ) return;
+			const root  = chart.canvas.ownerDocument.documentElement;
+			const space = parseFloat( getComputedStyle( root ).fontSize ) || 16;
+			this._wfcSpace = space;
+			if ( this.isHorizontal() ) {
+				this.height += space;
+			} else {
+				this.width += space;
+			}
+		};
+	},
+	afterLayout( chart ) {
+		const legend = chart.legend;
+		if ( ! legend || ! legend.options.display || ! legend._wfcSpace ) return;
+		const space = legend._wfcSpace;
+		if ( legend.options.position === 'bottom' ) {
+			legend.top    += space;
+			legend.height -= space;
+		} else if ( legend.options.position === 'right' ) {
+			legend.left  += space;
+			legend.width -= space;
+		}
+	},
+};
+
 export function tableDataToChartConfig( {
 	tableData,
 	chartType,
@@ -42,6 +89,10 @@ export function tableDataToChartConfig( {
 	yAxisLabel,
 	gridColor,
 	tickColor,
+	customRange,
+	rangeMin,
+	rangeMax,
+	rangeStep,
 } ) {
 	if ( ! tableData || tableData.length < 2 ) {
 		return { type: 'bar', data: { labels: [], datasets: [] }, options: {} };
@@ -128,9 +179,22 @@ export function tableDataToChartConfig( {
 	const gridC = gridColor  || 'rgba(0,0,0,0.06)';
 	const tickC = tickColor  || undefined;
 
+	// Fixed min/max (and optional step) for the value axis.
+	const range = {};
+	if ( customRange ) {
+		const min = toOptionalNumber( rangeMin );
+		const max = toOptionalNumber( rangeMax );
+		if ( min !== undefined ) range.min = min;
+		if ( max !== undefined ) range.max = max;
+	}
+	const rangeStepNum = customRange ? toOptionalNumber( rangeStep ) : undefined;
+	const stepTicks    = rangeStepNum > 0 ? { stepSize: rangeStepNum } : {};
+	const valueAxis    = actualIndexAxis === 'y' ? 'x' : 'y';
+
 	const config = {
 		type: actualType,
 		data: { labels, datasets },
+		plugins: [ legendSpacingPlugin ],
 		options: {
 			responsive:          true,
 			maintainAspectRatio: false,
@@ -152,19 +216,27 @@ export function tableDataToChartConfig( {
 					stacked: stacked,
 					grid:    { display: showGridX, color: gridC },
 					title:   xAxisLabel ? { display: true, text: xAxisLabel, font: fontObj } : undefined,
-					ticks:   { font: fontObj, color: tickC },
+					ticks:   { font: fontObj, color: tickC, ...( valueAxis === 'x' ? stepTicks : {} ) },
+					...( valueAxis === 'x' ? range : {} ),
 				},
 				y: {
 					stacked: stacked,
 					grid:    { display: showGridY, color: gridC },
 					title:   yAxisLabel ? { display: true, text: yAxisLabel, font: fontObj } : undefined,
-					ticks:   { font: fontObj, color: tickC },
+					ticks:   { font: fontObj, color: tickC, ...( valueAxis === 'y' ? stepTicks : {} ) },
+					...( valueAxis === 'y' ? range : {} ),
 				},
 			} : isRadar ? {
 				r: {
-					ticks:       { font: fontObj, backdropColor: 'transparent', color: tickC },
+					ticks:       { font: fontObj, backdropColor: 'transparent', color: tickC, ...stepTicks },
 					pointLabels: { font: fontObj, color: tickC },
 					grid:        { color: gridC },
+					...range,
+				},
+			} : chartType === 'polarArea' && customRange ? {
+				r: {
+					ticks: { ...stepTicks },
+					...range,
 				},
 			} : {},
 		},

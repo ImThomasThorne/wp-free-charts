@@ -24,6 +24,7 @@ function initCharts() {
 			showGridX, showGridY, fontSize, fontFamily, fontWeight,
 			xAxisLabel, yAxisLabel, gridColor, tickColor,
 			enableFilters, filterType,
+			customRange, rangeMin, rangeMax, rangeStep,
 		} = cfg;
 
 		const defaults      = getDefaultColors();
@@ -38,7 +39,7 @@ function initCharts() {
 			legendAlign, showTooltips, enableAnimation, stacked, tension, pointRadius,
 			fillArea, barBorderRadius, indexAxis, cutout, showGridX, showGridY,
 			fontSize, fontFamily, fontWeight, xAxisLabel, yAxisLabel,
-			gridColor, tickColor,
+			gridColor, tickColor, customRange, rangeMin, rangeMax, rangeStep,
 		} );
 
 		const chart = new Chart( canvas, chartConfig );

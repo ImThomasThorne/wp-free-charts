@@ -263,6 +263,22 @@
       "type": "number",
       "default": 55
     },
+    "customRange": {
+      "type": "boolean",
+      "default": false
+    },
+    "rangeMin": {
+      "type": "string",
+      "default": ""
+    },
+    "rangeMax": {
+      "type": "string",
+      "default": ""
+    },
+    "rangeStep": {
+      "type": "string",
+      "default": ""
+    },
     "uniqueId": {
       "type": "string",
       "default": ""
