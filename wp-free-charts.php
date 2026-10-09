@@ -1,21 +1,9 @@
-
-
-
-
-
-
-
-
-
-
-
-
 <?php
 /**
  * Plugin Name:       WP Free Charts
  * Plugin URI:        https://github.com/ImThomasThorne/wp-free-charts
  * Description:       Add interactive, customizable charts (pie, bar, line & more) to your WordPress site with a powerful Gutenberg block featuring spreadsheet data entry, theme colour integration, and front-end filters.
- * Version:           1.0.1
+ * Version:           1.0.5
  * Requires at least: 6.3
  * Requires PHP:      7.4
  * Author:
@@ -31,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WP_FREE_CHARTS_VERSION', '1.0.1' );
+define( 'WP_FREE_CHARTS_VERSION', '1.0.5' );
 define( 'WP_FREE_CHARTS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'WP_FREE_CHARTS_URL', plugin_dir_url( __FILE__ ) );
 
