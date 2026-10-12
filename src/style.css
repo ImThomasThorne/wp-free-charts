@@ -24,7 +24,7 @@
 }
 
 /* ── Filter buttons ──────────────────────────────────────────────────────────── */
-.wfc-filters {
+.wfc-block .wfc-filters {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 8px;
@@ -32,36 +32,51 @@
 	justify-content: center;
 }
 
-.wfc-filter-btn {
+/* Scoped to the block so theme button styles (padding, min-height,
+   uppercase, width: 100% etc.) don't blow the buttons up. */
+.wfc-block .wfc-filters .wfc-filter-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
+	width: auto;
+	min-width: 0;
+	height: auto;
+	min-height: 0;
+	margin: 0;
 	padding: 5px 16px;
 	background: #f0f0f1;
 	border: 1px solid #c8c8c8;
 	border-radius: 24px;
+	box-shadow: none;
+	font-family: inherit;
 	font-size: 13px;
+	font-weight: normal;
+	line-height: 1.4;
+	letter-spacing: normal;
+	text-transform: none;
+	text-decoration: none;
+	white-space: nowrap;
 	color: #333;
 	cursor: pointer;
 	transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, opacity 0.18s ease;
-	font-family: inherit;
-	line-height: 1.4;
 }
 
-.wfc-filter-btn:hover {
+.wfc-block .wfc-filters .wfc-filter-btn:hover {
 	background: #e2e2e3;
 	border-color: #aaa;
+	color: #333;
 }
 
-.wfc-filter-btn--active {
+.wfc-block .wfc-filters .wfc-filter-btn--active {
 	background: #007cba;
 	border-color: #007cba;
 	color: #fff;
 }
 
-.wfc-filter-btn--active:hover {
+.wfc-block .wfc-filters .wfc-filter-btn--active:hover {
 	background: #005f8e;
 	border-color: #005f8e;
+	color: #fff;
 }
 
 /* Style the colour dot inside filter buttons when the button has a colour indicator */
@@ -75,38 +90,34 @@
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
 
-/* Tablet: cap chart at a sensible height */
+/* Tablet & mobile: never taller than the chosen height, but keep at least
+   300px so lines and labels have room on narrow screens. */
 @media ( max-width: 768px ) {
 	.wfc-chart-container {
-		height: clamp( 220px, 55vw, var( --wfc-height, 400px ) ) !important;
+		height: min( var( --wfc-height, 400px ), max( 300px, 80vw ) ) !important;
 	}
 
-	.wfc-filters {
+	.wfc-block .wfc-filters {
 		gap: 6px;
 	}
 
-	.wfc-filter-btn {
+	.wfc-block .wfc-filters .wfc-filter-btn {
 		font-size: 12px;
 		padding: 4px 12px;
 	}
 }
 
-/* Mobile: narrower constraint, larger relative proportion */
 @media ( max-width: 480px ) {
-	.wfc-chart-container {
-		height: clamp( 180px, 65vw, var( --wfc-height, 400px ) ) !important;
-	}
-
 	.wfc-chart-title {
 		font-size: clamp( 16px, 4vw, 32px );
 	}
 
-	.wfc-filters {
-		justify-content: flex-start;
+	.wfc-block .wfc-filters {
 		gap: 5px;
+		margin-top: 12px;
 	}
 
-	.wfc-filter-btn {
+	.wfc-block .wfc-filters .wfc-filter-btn {
 		font-size: 11px;
 		padding: 3px 10px;
 	}

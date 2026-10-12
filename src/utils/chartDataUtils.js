@@ -64,6 +64,71 @@ const legendSpacingPlugin = {
 	},
 };
 
+/** Charts narrower than this (in px) switch to a compact mobile layout. */
+const COMPACT_WIDTH = 480;
+const COMPACT_MAX_FONT = 11;
+
+function isCompact( chart ) {
+	return chart.width > 0 && chart.width < COMPACT_WIDTH;
+}
+
+/**
+ * Scriptable font: uses the configured font, capped to a smaller size
+ * when the chart is narrow. The base font lives in the plugin options
+ * so it is part of the (JSON) config and changes re-render the preview.
+ */
+function responsiveFont( ctx ) {
+	const font = ctx.chart.config.options.plugins?.wfcResponsive?.font || {};
+	return isCompact( ctx.chart )
+		? { ...font, size: Math.min( font.size || 13, COMPACT_MAX_FONT ) }
+		: font;
+}
+
+/**
+ * Applies the non-scriptable parts of the compact layout: moves side
+ * legends underneath, tightens legend spacing and allows x-axis labels
+ * to rotate fully so more of them fit.
+ */
+function applyCompactLayout( chart ) {
+	const compact = isCompact( chart );
+	if ( chart.$wfcCompact === compact ) return;
+	chart.$wfcCompact = compact;
+
+	const opts   = chart.config.options;
+	const legend = opts.plugins?.legend;
+	if ( ! chart.$wfcBase ) {
+		chart.$wfcBase = { legendPosition: legend?.position || 'top' };
+	}
+	const base = chart.$wfcBase;
+
+	if ( legend ) {
+		const isSide = [ 'left', 'right' ].includes( base.legendPosition );
+		legend.position = compact && isSide ? 'bottom' : base.legendPosition;
+		legend.labels   = { ...legend.labels, padding: compact ? 10 : 16 };
+	}
+
+	const categoryAxis = opts.indexAxis === 'y' ? opts.scales?.y : opts.scales?.x;
+	if ( categoryAxis ) {
+		categoryAxis.ticks = {
+			...categoryAxis.ticks,
+			maxRotation:     compact ? 90 : 50,
+			autoSkipPadding: compact ? 2 : 3,
+		};
+	}
+}
+
+const responsivePlugin = {
+	id: 'wfcResponsive',
+	// The chart's first update runs straight after init, and resize fires
+	// before each re-render, so both pick up the layout without an extra update.
+	afterInit( chart ) {
+		applyCompactLayout( chart );
+	},
+	resize( chart ) {
+		applyCompactLayout( chart );
+	},
+};
+
 export function tableDataToChartConfig( {
 	tableData,
 	chartType,
@@ -194,7 +259,7 @@ export function tableDataToChartConfig( {
 	const config = {
 		type: actualType,
 		data: { labels, datasets },
-		plugins: [ legendSpacingPlugin ],
+		plugins: [ legendSpacingPlugin, responsivePlugin ],
 		options: {
 			responsive:          true,
 			maintainAspectRatio: false,
@@ -205,31 +270,32 @@ export function tableDataToChartConfig( {
 					display:  showLegend,
 					position: legendPosition || 'top',
 					align:    legendAlign    || 'center',
-					labels:   { font: fontObj, padding: 16, usePointStyle: true },
+					labels:   { font: responsiveFont, padding: 16, usePointStyle: true },
 				},
 				tooltip: {
 					enabled: showTooltips,
 				},
+				wfcResponsive: { font: fontObj },
 			},
 			scales: hasCartesian ? {
 				x: {
 					stacked: stacked,
 					grid:    { display: showGridX, color: gridC },
-					title:   xAxisLabel ? { display: true, text: xAxisLabel, font: fontObj } : undefined,
-					ticks:   { font: fontObj, color: tickC, ...( valueAxis === 'x' ? stepTicks : {} ) },
+					title:   xAxisLabel ? { display: true, text: xAxisLabel, font: responsiveFont } : undefined,
+					ticks:   { font: responsiveFont, color: tickC, ...( valueAxis === 'x' ? stepTicks : {} ) },
 					...( valueAxis === 'x' ? range : {} ),
 				},
 				y: {
 					stacked: stacked,
 					grid:    { display: showGridY, color: gridC },
-					title:   yAxisLabel ? { display: true, text: yAxisLabel, font: fontObj } : undefined,
-					ticks:   { font: fontObj, color: tickC, ...( valueAxis === 'y' ? stepTicks : {} ) },
+					title:   yAxisLabel ? { display: true, text: yAxisLabel, font: responsiveFont } : undefined,
+					ticks:   { font: responsiveFont, color: tickC, ...( valueAxis === 'y' ? stepTicks : {} ) },
 					...( valueAxis === 'y' ? range : {} ),
 				},
 			} : isRadar ? {
 				r: {
-					ticks:       { font: fontObj, backdropColor: 'transparent', color: tickC, ...stepTicks },
-					pointLabels: { font: fontObj, color: tickC },
+					ticks:       { font: responsiveFont, backdropColor: 'transparent', color: tickC, ...stepTicks },
+					pointLabels: { font: responsiveFont, color: tickC },
 					grid:        { color: gridC },
 					...range,
 				},
