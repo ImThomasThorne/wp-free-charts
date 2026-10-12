@@ -8,6 +8,9 @@ Thumbs.db
 .vscode/
 .idea/
 
+# Screenshots from tools/visual-check
+tools/visual-check/out/
+
 # The build/ folder must be committed so the update checker can install
 # the compiled plugin directly from a GitHub release zip.
 # Do NOT add build/ here.

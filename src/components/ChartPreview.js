@@ -3,6 +3,14 @@ import { Chart, registerables } from 'chart.js';
 
 Chart.register( ...registerables );
 
+/**
+ * Live Chart.js preview used inside the editor.
+ *
+ * The chart is destroyed and recreated whenever the config changes. Changes
+ * are detected by JSON-serialising the config, which drops functions, so any
+ * value a scriptable option depends on must also appear as plain data in the
+ * config (e.g. the base font in options.plugins.wfcResponsive).
+ */
 export default function ChartPreview( { chartConfig, height } ) {
 	const canvasRef = useRef( null );
 	const chartRef  = useRef( null );

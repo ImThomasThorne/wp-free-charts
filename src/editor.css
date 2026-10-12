@@ -1,3 +1,9 @@
+/*
+ * Editor-only styles (block.json "editorStyle", built to index.css).
+ * Imported by index.js: the in-block action bar, filter preview chips,
+ * sidebar helpers, and the data spreadsheet / chart type modals.
+ */
+
 /* ── Block wrapper ──────────────────────────────────────────────────────────── */
 .wp-block-wp-free-charts-chart {
 	box-sizing: border-box;

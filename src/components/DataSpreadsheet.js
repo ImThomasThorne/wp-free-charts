@@ -2,6 +2,19 @@ import { useState, useRef, useCallback } from '@wordpress/element';
 import { Modal, Button, Notice, Flex, FlexItem } from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
 
+/**
+ * Spreadsheet-style modal for editing the block's tableData.
+ *
+ * tableData layout (shared by every chart type):
+ *   row 0      = header: [ '', 'Series 1', 'Series 2', … ]
+ *   rows 1..n  = [ 'Category label', value, value, … ]
+ * Pie-like charts use only column 1; scatter uses X/Y column pairs.
+ *
+ * Edits are kept in local state and only written back via onSave ("Apply").
+ * Pasting tab-separated data (from Excel/Sheets) replaces the whole grid.
+ */
+
+/** Convert a cell to a number where possible ("1,200" → 1200); keep text as-is. */
 function parseNumber( val ) {
 	if ( val === '' || val === null || val === undefined ) return '';
 	const n = parseFloat( String( val ).replace( /,/g, '' ) );
@@ -24,6 +37,7 @@ export default function DataSpreadsheet( { tableData, chartType, onSave, onClose
 		setTimeout( () => setNotice( null ), 3000 );
 	};
 
+	// Header row and label column stay as text; data cells become numbers.
 	const updateCell = useCallback( ( r, c, value ) => {
 		setRows( ( prev ) => {
 			const next = prev.map( ( row ) => [ ...row ] );
@@ -64,6 +78,8 @@ export default function DataSpreadsheet( { tableData, chartType, onSave, onClose
 		} );
 	}, [] );
 
+	// Spreadsheet-like keyboard navigation: Tab/Shift+Tab, Enter (adds a row
+	// at the bottom), arrows, and Escape to deselect.
 	const handleKeyDown = ( e, r, c ) => {
 		if ( e.key === 'Tab' ) {
 			e.preventDefault();
@@ -91,6 +107,7 @@ export default function DataSpreadsheet( { tableData, chartType, onSave, onClose
 		else if    ( e.key === 'ArrowRight' && c < numCols - 1) { e.preventDefault(); setSelected( [ r, c + 1 ] ); }
 	};
 
+	// Paste a tab-separated grid; replaces all current data.
 	const handlePaste = ( e ) => {
 		e.preventDefault();
 		const raw  = e.clipboardData.getData( 'text/plain' );

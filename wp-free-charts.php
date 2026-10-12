@@ -3,7 +3,7 @@
  * Plugin Name:       WP Free Charts
  * Plugin URI:        https://github.com/ImThomasThorne/wp-free-charts
  * Description:       Add interactive, customizable charts (pie, bar, line & more) to your WordPress site with a powerful Gutenberg block featuring spreadsheet data entry, theme colour integration, and front-end filters.
- * Version:           1.0.8
+ * Version:           1.0.9
  * Requires at least: 6.3
  * Requires PHP:      7.4
  * Author:
@@ -18,7 +18,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 define( 'WP_FREE_CHARTS_PATH', plugin_dir_path( __FILE__ ) );
 
-// Updates are served from GitHub releases via plugin-update-checker.
+// Updates are served from GitHub releases via plugin-update-checker (bundled
+// in plugin-update-checker/). Sites see an update when a release is published
+// whose tag is higher than the Version header above.
 require WP_FREE_CHARTS_PATH . 'plugin-update-checker/plugin-update-checker.php';
 
 $wp_free_charts_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
@@ -28,6 +30,10 @@ $wp_free_charts_update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory:
 );
 $wp_free_charts_update_checker->setBranch( 'main' );
 
+/**
+ * Register the block from build/block.json, which wires up the editor script,
+ * front-end view script and styles. Run `npm run build` after changing src/.
+ */
 function wp_free_charts_register_block() {
 	if ( ! function_exists( 'register_block_type' ) ) {
 		return;

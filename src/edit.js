@@ -1,3 +1,15 @@
+/**
+ * Block editor UI for the chart block.
+ *
+ * - Toolbar + in-block buttons open the data spreadsheet and chart type modals.
+ * - The sidebar (InspectorControls) holds all styling/behaviour settings.
+ * - The live preview uses the same tableDataToChartConfig() as the front end
+ *   (view.js), so what you see here matches the published chart.
+ *
+ * New setting checklist: add the attribute to block.json, destructure it here,
+ * pass it to tableDataToChartConfig(), add a control, then add it to save.js
+ * (see the validation note there) and view.js.
+ */
 import { useState, useEffect } from '@wordpress/element';
 import {
 	InspectorControls,
@@ -26,7 +38,9 @@ import { __ } from '@wordpress/i18n';
 import ChartPreview      from './components/ChartPreview';
 import DataSpreadsheet   from './components/DataSpreadsheet';
 import ChartTypeSelector from './components/ChartTypeSelector';
-import { tableDataToChartConfig, getDefaultColors, generateUniqueId } from './utils/chartDataUtils';
+import { tableDataToChartConfig, getDefaultColors, generateUniqueId, getFilterLabels } from './utils/chartDataUtils';
+
+// ── Sidebar option lists ─────────────────────────────────────────────────────
 
 const FONT_OPTIONS = [
 	{ label: 'Theme Default', value: '' },
@@ -148,6 +162,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		? spacingUnits.map( ( u ) => ( { value: u, label: u, default: 0 } ) )
 		: DEFAULT_SPACING_UNITS;
 
+	// Give each block a stable id (saved as data-wfc-id) the first time it's edited.
 	useEffect( () => {
 		if ( ! uniqueId ) setAttributes( { uniqueId: generateUniqueId() } );
 	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
@@ -158,6 +173,8 @@ export default function Edit( { attributes, setAttributes } ) {
 	const isScatter = chartType === 'scatter';
 	const hasValueScale = ! [ 'pie', 'doughnut' ].includes( chartType );
 
+	// One colour per series (or per slice for pie-like charts); unset ones fall
+	// back to the default palette.
 	const defaults       = getDefaultColors();
 	const numDatasets    = ( tableData[ 0 ]?.length ?? 2 ) - 1;
 	const colorCount     = isPieType ? tableData.length - 1 : numDatasets;
@@ -185,10 +202,10 @@ export default function Edit( { attributes, setAttributes } ) {
 		? tableData.slice( 1 ).map( ( r ) => String( r[ 0 ] || '' ) )
 		: ( tableData[ 0 ]?.slice( 1 ) ?? [] ).map( String );
 
-	const filterLabels = isPieType
-		? tableData.slice( 1 ).map( ( r ) => r[ 0 ] )
-		: ( tableData[ 0 ]?.slice( 1 ) ?? [] );
+	// Same helper as view.js, so the editor preview matches the front end.
+	const filterLabels = getFilterLabels( chartType, filterType, tableData );
 
+	// Wrapper styles: must mirror the style object built in save.js.
 	const chartHeightVal = toUnitVal( chartHeight, '400px' );
 	const hasBorder      = hasMeasure( toUnitVal( borderWidth, '0' ) );
 	const hasRadius      = hasMeasure( toUnitVal( borderRadius, '0' ) );
@@ -353,7 +370,12 @@ export default function Edit( { attributes, setAttributes } ) {
 						onChange={ ( v ) => setAttributes( { enableFilters: v } ) }
 						help={ __( 'Show toggle buttons so visitors can show/hide series or categories.', 'wp-free-charts' ) }
 					/>
-					{ enableFilters && (
+					{ enableFilters && isPieType && (
+						<p className="wfc-hint">
+							{ __( 'Each button shows or hides one slice.', 'wp-free-charts' ) }
+						</p>
+					) }
+					{ enableFilters && ! isPieType && (
 						<SelectControl
 							label={ __( 'Filter By', 'wp-free-charts' ) }
 							value={ filterType }

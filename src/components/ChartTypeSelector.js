@@ -1,3 +1,10 @@
+/**
+ * Grid of chart type cards shown in the "Change Chart Type" modal.
+ *
+ * `type` is stored in the chartType attribute. All are native Chart.js types
+ * except 'horizontalBar', which chartDataUtils maps to a 'bar' chart with
+ * indexAxis 'y'.
+ */
 import { __ } from '@wordpress/i18n';
 
 const CHART_TYPES = [
@@ -115,15 +122,13 @@ const CHART_TYPES = [
 ];
 
 export default function ChartTypeSelector( { value, onChange } ) {
-	const normalised = value === 'bar' ? 'bar' : value;
-
 	return (
 		<div className="wfc-type-grid">
 			{ CHART_TYPES.map( ( { type, label, desc, svg } ) => (
 				<button
 					key={ type }
 					type="button"
-					className={ `wfc-type-card${ normalised === type ? ' is-selected' : '' }` }
+					className={ `wfc-type-card${ value === type ? ' is-selected' : '' }` }
 					onClick={ () => onChange( type ) }
 				>
 					<span className="wfc-type-icon">{ svg }</span>

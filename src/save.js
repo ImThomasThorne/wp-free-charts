@@ -1,3 +1,17 @@
+/**
+ * Static save output for the chart block.
+ *
+ * The chart isn't rendered here: we output a <figure> with an empty <canvas>,
+ * the filter buttons, and a JSON <script class="wfc-chart-config"> holding the
+ * settings. view.js reads that JSON on the front end and draws the chart.
+ *
+ * IMPORTANT: WordPress compares this function's output with the HTML stored in
+ * each post. Any change to the markup (including the JSON) makes existing
+ * blocks fail validation ("This block contains unexpected content"). So:
+ *  - add new settings to chartData only when they're set (see customRange), or
+ *  - add a `deprecated` entry in index.js holding the previous save().
+ * Behaviour changes belong in view.js / chartDataUtils.js instead.
+ */
 import { useBlockProps } from '@wordpress/block-editor';
 import { getDefaultColors } from './utils/chartDataUtils';
 
@@ -29,6 +43,7 @@ export default function save( { attributes } ) {
 		uniqueId,
 	} = attributes;
 
+	// Pad the colour list with defaults so every series/slice has a colour.
 	const defaults      = getDefaultColors();
 	const isPieType     = [ 'pie', 'doughnut', 'polarArea' ].includes( chartType );
 	const numDatasets   = ( tableData[ 0 ]?.length ?? 2 ) - 1;
@@ -38,6 +53,9 @@ export default function save( { attributes } ) {
 		resolvedColors.push( defaults[ resolvedColors.length % defaults.length ] );
 	}
 
+	// Kept as-is for block validation. These buttons are a placeholder only:
+	// view.js replaces them with ones built by getFilterLabels(), which also
+	// fixes the labels for scatter and "label" filters.
 	const filterLabels = isPieType
 		? tableData.slice( 1 ).map( ( r ) => r[ 0 ] )
 		: ( tableData[ 0 ]?.slice( 1 ) ?? [] );
@@ -76,6 +94,8 @@ export default function save( { attributes } ) {
 		},
 	} );
 
+	// Settings passed to view.js. Key order and contents are part of the saved
+	// markup, so see the validation note at the top before changing this.
 	const chartData = {
 		chartType, tableData, showLegend, legendPosition, legendAlign,
 		showTooltips, enableAnimation, stacked, tension, pointRadius, fillArea,

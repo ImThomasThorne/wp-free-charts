@@ -1,7 +1,19 @@
+/**
+ * Shared chart logic used by BOTH the editor preview (edit.js) and the
+ * front end (view.js), so they always render identically.
+ *
+ * The main export, tableDataToChartConfig(), turns block attributes into a
+ * Chart.js v4 config. It also attaches two inline Chart.js plugins:
+ *  - legendSpacingPlugin: 1rem gap between the legend and the chart area
+ *  - responsivePlugin:    compact layout for charts narrower than 480px
+ */
+
+/** Random id stored in the uniqueId attribute (output as data-wfc-id). */
 export function generateUniqueId() {
 	return 'wfc-' + Math.random().toString( 36 ).substr( 2, 9 ) + Date.now().toString( 36 );
 }
 
+/** Fallback palette for series/slices without a chosen colour (Tableau 10). */
 export function getDefaultColors() {
 	return [
 		'#4e79a7', '#f28e2b', '#e15759', '#76b7b2',
@@ -10,6 +22,7 @@ export function getDefaultColors() {
 	];
 }
 
+/** "#rrggbb" → "rgba(r,g,b,alpha)"; other colour formats are returned unchanged. */
 function hexToRgba( hex, alpha ) {
 	if ( ! hex ) return `rgba(78,121,167,${ alpha })`;
 	const r = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec( hex );
@@ -63,6 +76,32 @@ const legendSpacingPlugin = {
 		}
 	},
 };
+
+/** Pie-like charts have one dataset whose slices are the table rows. */
+export function isPieLikeType( chartType ) {
+	return [ 'pie', 'doughnut', 'polarArea' ].includes( chartType );
+}
+
+/**
+ * Labels for the front-end filter buttons, in the same order as the index
+ * each button toggles:
+ *  - pie/doughnut/polarArea: one per slice (table row), whatever filterType says
+ *  - "label" filter: one per category (table row)
+ *  - "dataset" filter: one per series (header column; scatter uses X/Y pairs)
+ */
+export function getFilterLabels( chartType, filterType, tableData ) {
+	const header = tableData?.[ 0 ] ?? [];
+	const rows   = ( tableData ?? [] ).slice( 1 );
+
+	if ( isPieLikeType( chartType ) || filterType === 'label' ) {
+		return rows.map( ( r ) => String( r[ 0 ] ?? '' ) );
+	}
+	if ( chartType === 'scatter' ) {
+		const pairs = Math.floor( ( header.length - 1 ) / 2 );
+		return Array.from( { length: pairs }, ( _, d ) => String( header[ 1 + d * 2 ] || `Series ${ d + 1 }` ) );
+	}
+	return header.slice( 1 ).map( ( h, d ) => String( h || `Dataset ${ d + 1 }` ) );
+}
 
 /** Charts narrower than this (in px) switch to a compact mobile layout. */
 const COMPACT_WIDTH = 480;
@@ -129,6 +168,17 @@ const responsivePlugin = {
 	},
 };
 
+/**
+ * Build a Chart.js config from block attributes.
+ *
+ * tableData row 0 is the header ([ '', series names… ]); each later row is
+ * [ label, values… ]. How it maps to datasets depends on the chart type:
+ *  - pie/doughnut/polarArea: one dataset, one slice per row (column 1 only)
+ *  - scatter: one dataset per X/Y column pair, one point per row
+ *  - everything else: one dataset per column, one category per row
+ *
+ * datasetColors must already be padded to the right length (callers do this).
+ */
 export function tableDataToChartConfig( {
 	tableData,
 	chartType,
@@ -230,6 +280,7 @@ export function tableDataToChartConfig( {
 		}
 	}
 
+	// 'horizontalBar' isn't a Chart.js type: it's a bar chart on the y index axis.
 	const actualType      = chartType === 'horizontalBar' ? 'bar' : chartType;
 	const actualIndexAxis = chartType === 'horizontalBar' ? 'y' : indexAxis;
 	const hasCartesian    = ! isPieType && ! isRadar;
@@ -299,9 +350,14 @@ export function tableDataToChartConfig( {
 					grid:        { color: gridC },
 					...range,
 				},
-			} : chartType === 'polarArea' && customRange ? {
+			} : chartType === 'polarArea' ? {
 				r: {
-					ticks: { ...stepTicks },
+					// ticks.z > 0 draws the numbers above the segments (Chart.js
+					// layers scales by ticks.z / grid.z, not a scale-level z);
+					// otherwise they're hidden behind them. The translucent
+					// backdrop keeps them readable where they overlap a segment.
+					ticks: { z: 1, font: responsiveFont, color: tickC, backdropColor: 'rgba(255,255,255,0.75)', ...stepTicks },
+					grid:  { color: gridC },
 					...range,
 				},
 			} : {},

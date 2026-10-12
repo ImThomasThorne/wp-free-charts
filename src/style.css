@@ -1,3 +1,10 @@
+/*
+ * Front-end + editor styles (block.json "style", built to style-view.css).
+ * Imported by view.js. Most layout values (padding, margin, border, height)
+ * come from inline styles written by save.js; this file covers the parts
+ * that can't be inline, including the mobile overrides at the bottom.
+ */
+
 /* ── Block wrapper ──────────────────────────────────────────────────────────── */
 .wfc-block {
 	box-sizing: border-box;
@@ -79,7 +86,7 @@
 	color: #fff;
 }
 
-/* Style the colour dot inside filter buttons when the button has a colour indicator */
+/* Colour dot for filter buttons (currently unused by view.js) */
 .wfc-filter-btn__dot {
 	display: inline-block;
 	width: 10px;
@@ -89,6 +96,8 @@
 }
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */
+/* Chart.js-side mobile tweaks (fonts, legend position, label rotation) are
+   in responsivePlugin in utils/chartDataUtils.js. */
 
 /* Tablet & mobile: never taller than the chosen height, but keep at least
    300px so lines and labels have room on narrow screens. */
