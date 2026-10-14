@@ -1,10 +1,13 @@
 # WP Free Charts
 
-A WordPress Gutenberg block for adding interactive charts (pie, bar, line, doughnut, polar area, radar, scatter) with spreadsheet-style data entry, theme colour integration, and front-end filters.
+WordPress Gutenberg blocks:
+
+- **WP Free Charts** — interactive charts (pie, bar, line, doughnut, polar area, radar, scatter) with spreadsheet-style data entry, theme colour integration, and front-end filters.
+- **WP Free Table** — a Word-style table: add/remove rows and columns, merge and split cells, select cells with Shift/Ctrl+click (or whole rows/columns) to set background/text colours from the theme palette, bold/italic/underline/links, drag to resize columns, and a mobile layout of either sideways scrolling or stacked cards. It responds to the width of its container (e.g. a Group block), not just the screen. Arrow keys move between cells, you can paste a block of cells straight from Excel/Google Sheets, and it converts to and from the core Table block (Transform to…).
 
 ## Requirements
 
-- WordPress 6.3+
+- WordPress 6.6+
 - PHP 7.4+
 - Node.js 18+ (for development only)
 
@@ -16,6 +19,7 @@ Install dependencies and start the watcher:
 npm install --include=dev
 npm run start        # live rebuild on save
 npm run build        # production build
+npm run test:unit    # table grid logic tests
 ```
 
 Source files live in `src/`. The compiled plugin lives in `build/` and **must be committed** — the update checker installs updates from the GitHub release zip, which only contains committed files.

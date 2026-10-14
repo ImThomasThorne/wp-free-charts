@@ -7,7 +7,8 @@
     "start": "wp-scripts start",
     "format": "wp-scripts format",
     "lint:js": "wp-scripts lint-js",
-    "lint:css": "wp-scripts lint-style"
+    "lint:css": "wp-scripts lint-style",
+    "test:unit": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"tools/tests/*.test.mjs\""
   },
   "dependencies": {
     "@babel/runtime": "^7.29.2",

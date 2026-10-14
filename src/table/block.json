@@ -1,0 +1,62 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "wp-free-charts/table",
+  "version": "1.0.0",
+  "title": "WP Free Table",
+  "category": "text",
+  "icon": "editor-table",
+  "description": "A flexible table: merge cells, colour cells, rows and columns, resize columns, and choose how it behaves on mobile.",
+  "keywords": [ "table", "grid", "rows", "columns", "spreadsheet" ],
+  "textdomain": "wp-free-charts",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "attributes": {
+    "cells":            { "type": "array",   "default": [] },
+    "colWidths":        { "type": "array",   "default": [] },
+    "hasHeaderRow":     { "type": "boolean", "default": true },
+    "hasHeaderColumn":  { "type": "boolean", "default": false },
+    "headerBg":         { "type": "string",  "default": "" },
+    "headerBgSlug":     { "type": "string",  "default": "" },
+    "headerColor":      { "type": "string",  "default": "" },
+    "headerColorSlug":  { "type": "string",  "default": "" },
+    "striped":          { "type": "boolean", "default": false },
+    "stripeBg":         { "type": "string",  "default": "" },
+    "stripeBgSlug":     { "type": "string",  "default": "" },
+    "borderColor":      { "type": "string",  "default": "" },
+    "borderColorSlug":  { "type": "string",  "default": "" },
+    "borderWidth":      { "type": "string",  "default": "1px" },
+    "borderStyle":      { "type": "string",  "default": "solid" },
+    "cellPadding":      { "type": "object",  "default": {} },
+    "mobileLayout":     { "type": "string",  "default": "scroll" },
+    "minWidth":         { "type": "string",  "default": "" },
+    "hasCaption":       { "type": "boolean", "default": false },
+    "caption":          { "type": "string",  "default": "" }
+  },
+  "supports": {
+    "html": false,
+    "anchor": true,
+    "align": [ "wide", "full" ],
+    "color": {
+      "background": true,
+      "text": true,
+      "link": true,
+      "__experimentalDefaultControls": { "background": true, "text": true }
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalFontFamily": true,
+      "__experimentalFontWeight": true,
+      "__experimentalFontStyle": true,
+      "__experimentalTextTransform": true,
+      "__experimentalLetterSpacing": true,
+      "__experimentalDefaultControls": { "fontSize": true, "__experimentalFontFamily": true }
+    },
+    "spacing": {
+      "margin": true,
+      "padding": true
+    }
+  }
+}

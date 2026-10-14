@@ -1,0 +1,136 @@
+/*
+ * Editor-only styles for the table block (built to build/table/index.css):
+ * row/column handles, column resize grips, cell selection highlight and the
+ * setup placeholder.
+ */
+
+/* ── Handles (row numbers, column letters) ────────────────────────────────── */
+.wfc-table--editor .wfc-handle-col {
+	width: 28px;
+}
+
+.wfc-table--editor .wfc-table__table td.wfc-handle {
+	position: relative;
+	width: 28px;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	vertical-align: middle;
+	text-align: center;
+	user-select: none;
+}
+
+/* Handles take up space either way (so nothing jumps), but only show while the block is selected. */
+.wfc-table--editor:not( .is-selected ) .wfc-handle {
+	visibility: hidden;
+}
+
+.wfc-table--editor .wfc-handle button {
+	display: block;
+	width: 100%;
+	min-height: 20px;
+	height: 100%;
+	margin: 0;
+	padding: 0 2px;
+	border: 0;
+	border-radius: 2px;
+	background: #f0f0f0;
+	color: #757575;
+	font: 600 11px/20px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	cursor: pointer;
+}
+
+.wfc-table--editor .wfc-handle button:hover {
+	background: var( --wp-admin-theme-color, #007cba );
+	color: #fff;
+}
+
+.wfc-table--editor .wfc-col-handles td.wfc-handle {
+	padding-bottom: 4px;
+}
+
+.wfc-table--editor .wfc-row-handle {
+	padding-right: 4px !important;
+}
+
+.wfc-table--editor .wfc-row-handle button {
+	min-height: 100%;
+	position: absolute;
+	inset: 0 4px 0 0;
+	width: auto;
+	height: auto;
+}
+
+.wfc-table--editor .wfc-corner-handle button {
+	background: #e0e0e0;
+}
+
+/* Drag grip on the right edge of each column letter. */
+.wfc-table--editor .wfc-col-resizer {
+	position: absolute;
+	top: 0;
+	right: -5px;
+	bottom: 4px;
+	width: 10px;
+	z-index: 2;
+	cursor: col-resize;
+}
+
+.wfc-table--editor .wfc-col-resizer::after {
+	content: "";
+	position: absolute;
+	top: 3px;
+	bottom: 3px;
+	left: 4px;
+	width: 2px;
+	border-radius: 1px;
+	background: #c0c0c0;
+}
+
+.wfc-table--editor .wfc-col-resizer:hover::after {
+	background: var( --wp-admin-theme-color, #007cba );
+}
+
+/* ── Selected cells ───────────────────────────────────────────────────────── */
+/* An overlay tint (background-image) keeps the cell's own background colour visible. */
+.wfc-table--editor .wfc-table__table .is-cell-selected {
+	background-image: linear-gradient( rgba( 0, 124, 186, 0.14 ), rgba( 0, 124, 186, 0.14 ) );
+	outline: 2px solid var( --wp-admin-theme-color, #007cba );
+	outline-offset: -2px;
+}
+
+.wfc-table--editor .wfc-table__table th,
+.wfc-table--editor .wfc-table__table td:not( .wfc-handle ) {
+	min-width: 2em;
+	cursor: text;
+}
+
+/* ── Setup placeholder & sidebar ──────────────────────────────────────────── */
+.wfc-table-setup {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 12px;
+}
+
+.wfc-table-setup .components-base-control {
+	width: 100px;
+	margin-bottom: 0;
+}
+
+.wfc-table-setup .components-base-control__field {
+	margin-bottom: 0;
+}
+
+.wfc-button-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.wfc-hint {
+	font-size: 12px;
+	color: #757575;
+	line-height: 1.5;
+	margin: 0 0 12px;
+}

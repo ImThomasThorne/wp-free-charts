@@ -1,9 +1,15 @@
 # WP Free Charts — notes for Claude
 
-WordPress Gutenberg block (`wp-free-charts/chart`) that renders Chart.js v4 charts
-(bar, horizontalBar, line, pie, doughnut, polarArea, radar, scatter) from spreadsheet-style
-data, with theme colours and optional front-end filter buttons. Updates ship to sites from
-GitHub releases via the bundled plugin-update-checker library.
+Plugin with two Gutenberg blocks. Updates ship to sites from GitHub releases via the
+bundled plugin-update-checker library.
+- `wp-free-charts/chart` (src/ root → build/): Chart.js v4 charts (bar, horizontalBar, line,
+  pie, doughnut, polarArea, radar, scatter) from spreadsheet-style data, with theme colours
+  and optional front-end filter buttons.
+- `wp-free-charts/table` (src/table/ → build/table/): Word-style table. See "Table block" below.
+
+wp-scripts finds every `src/**/block.json`, so each block builds into the matching `build/`
+subfolder; `wp-free-charts.php` registers both. Requires WordPress 6.6+ (the build depends on
+the `react-jsx-runtime` script handle).
 
 ## Layout
 
@@ -21,7 +27,12 @@ GitHub releases via the bundled plugin-update-checker library.
 | `src/editor.css` | Editor-only styles (modals, sidebar, preview chips) |
 | `build/` | Compiled output. **Committed** because sites install straight from the release zip |
 | `plugin-update-checker/` | Vendored YahnisElsts/plugin-update-checker v5; don't edit |
-| `tools/visual-check/` | Headless-Edge screenshot harness (see below); excluded from release zips via `.gitattributes` |
+| `src/table/` | The table block (see "Table block") |
+| `tools/visual-check/` | Headless-Edge screenshot harness for the chart block (see below) |
+| `tools/tests/` | Node unit tests (`npm run test:unit`) |
+| `tools/editor-test/` | End-to-end editor test against WordPress Playground (see Commands) |
+
+`tools/` and `CLAUDE.md` are excluded from release zips via `.gitattributes`.
 
 ## Data model
 
@@ -55,14 +66,70 @@ GitHub releases via the bundled plugin-update-checker library.
   `tableDataToChartConfig` → control in `edit.js` → conditional key in `save.js` → destructure +
   pass in `view.js`.
 
+## Table block (src/table/)
+
+| File | Role |
+|---|---|
+| `tableUtils.js` | **Pure** grid operations (insert/delete rows/cols, merge, split, selection rects, header rows, column labels, widths). No WP imports; unit-tested in `tools/tests/tableUtils.test.mjs` |
+| `styles.js` | Pure inline-style helpers shared by edit and save (cell style, table CSS vars, colour/font-size → `var(--wp--preset--…)`) |
+| `edit.js` | Editor: setup placeholder, selection, toolbar (Rows & columns menu, Merge, Split), sidebar, column-resize drag |
+| `save.js` | Static `<figure><div.wfc-table__scroll><table>…</table></div><figcaption/></figure>`; no front-end JS |
+| `formats.js` | Underline format (`<u>`) with a toolbar button shown only inside this block ("More" ▾ menu) |
+| `transforms.js` | Transform to/from `core/table` (text, merges, align, header row, caption; colours/fonts/widths dropped going to core). core/table content may be `RichTextData`, so it's converted with `toHTMLString()` |
+| `style.css` | Front end + editor: table look via CSS vars, mobile scroll/stack layouts (container queries) |
+| `editor.css` | Row/column handles, resize grips, selection highlight |
+
+- **Data model:** `cells[r][c]` is a full grid. An origin cell is `{ content, colspan?, rowspan?, ...style }`
+  and a position covered by a merge is `{ hidden: true }`. Spans are omitted when 1. Style keys are
+  `STYLE_KEYS` in tableUtils. Column ops reuse row ops via `transpose()`. All helpers are immutable.
+- **Colours and font sizes** are stored as value + slug (`bg`/`bgSlug`, `headerBg`/`headerBgSlug`, …).
+  When a slug exists, output is `var(--wp--preset--color--{slug})`, so the table follows theme palette changes.
+- **Whole-table typography, colours and spacing** come from block supports in block.json (theme
+  fonts and sizes appear in the sidebar automatically). Table-only settings are attributes, output as
+  CSS custom properties on `<table>` (`--wfc-border-*`, `--wfc-cell-padding`, `--wfc-header-*`, `--wfc-stripe-bg`).
+- **Header rows:** `getHeaderRowCount()` grows the `<thead>` when a first-row cell is merged downward,
+  so a rowspan never crosses thead/tbody.
+- **Responsive:** the figure is a CSS container, so layouts react to the width of the block's
+  container (Group, Columns), not the viewport. Below 600px: `is-mobile-scroll` makes resized column
+  widths advisory (`table-layout: auto`) and scrolls sideways; `is-mobile-stack` turns rows into cards
+  with `td[data-label]::before` labels (labels come from the first row, written by save.js). Stack rules
+  are excluded in the editor via `.wfc-table--editor`.
+- **Editor handles:** an extra handle row (column letters + resize grips) and handle column (row numbers)
+  are rendered only in edit.js. They're always in the DOM, hidden via CSS when the block isn't selected,
+  so columns stay aligned. Selection is local state of origin keys `"r-c"`.
+- **Keyboard and paste** use native capture-phase listeners on the editor `<table>`, so they run before
+  WritingFlow (which would jump to the next block) and before RichText's paste handling. They read
+  current state from `latest` (a ref), because they're attached once. Arrow keys only change cell when
+  `caretAtEdge()` says the caret is at the start/end or the first/last line, and at the table's edge they
+  fall through so the editor moves to the next block. **Move focus with
+  `selectionChange(clientId, 'cell-r-c', offset, offset)`, never by setting the DOM caret:** RichText
+  resets a hand-set caret on focus. Multi-cell paste triggers only when the clipboard has a tab or an
+  HTML `<table>` (what Excel/Sheets put there); `parseClipboardGrid` handles quoted cells.
+- `cellStyle()` property order is part of saved markup. Add new properties only if they're undefined
+  for existing cells (as `fontFamily` was).
+- The same **block-validation rule** as the chart applies: changing save.js output needs a `deprecated`
+  entry in `src/table/index.js`.
+
 ## Commands
 
 ```powershell
 npm install --include=dev   # node_modules is not committed
 npm run build               # always rebuild and commit build/ after src/ changes
 npm run start               # watch mode
-powershell -ExecutionPolicy Bypass -File tools\visual-check\shoot.ps1   # screenshots -> tools\visual-check\out\
+npm run test:unit           # table grid logic (node --test tools/tests/*.test.mjs)
+powershell -ExecutionPolicy Bypass -File tools\visual-check\shoot.ps1   # chart screenshots -> tools\visual-check\out\
 ```
+
+**Real-editor testing (table block, or anything editor-side):** WordPress Playground runs
+WordPress in Node with no Docker or PHP install. Start it in the background with the repo mounted,
+then drive it with `tools/editor-test/table-editor.test.mjs` (create/type/select/merge/colour/resize/
+responsive screenshots) and `table-stage4.test.mjs` (arrow keys, paste, fonts, transforms; prints
+PASS/FAIL), using playwright-core + installed Edge, headless. Copy the test files into the scratch
+folder that has playwright-core so the import resolves. See the header of that file for the exact commands. Use `--mount-dir <path> <vfs>`, since the
+`--mount=a:b` form can't parse Windows drive letters. Install playwright-core in a scratch folder,
+not in the repo. The editor canvas is an iframe (`iframe[name="editor-canvas"]`). Close the welcome
+modal first. Extra rich-text formats sit in the toolbar's "More" ▾ menu. Use `wp.data` in
+`page.evaluate` for setup and assertions (e.g. `getBlocks()[0].isValid` after a reload).
 
 The visual check renders all 8 chart types at 375px and 760px, with the legend top/right, plus a
 filter grid with the 2nd button clicked off. Use `Read` on the PNGs to inspect them. To compare

@@ -1,0 +1,134 @@
+/*
+ * Table block styles: front end AND editor (block.json "style", built to
+ * build/table/style-index.css). Table-level settings arrive as CSS custom
+ * properties on <table> (see styles.js tableStyle()); per-cell formatting is
+ * inline on each cell, so it always wins over these defaults.
+ */
+
+/* ── Wrapper ──────────────────────────────────────────────────────────────── */
+.wp-block-wp-free-charts-table {
+	/* Lets the mobile layout react to the width of the container the table
+	   sits in (e.g. a Group or Column block), not just the screen width. */
+	container-type: inline-size;
+	box-sizing: border-box;
+	margin-left: 0;
+	margin-right: 0;
+}
+
+.wfc-table__scroll {
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+
+/* ── Table ────────────────────────────────────────────────────────────────── */
+.wfc-table__table {
+	width: 100%;
+	border-collapse: collapse;
+	border-spacing: 0;
+	margin: 0;
+}
+
+/* Set when columns have been resized; makes the <col> widths exact. */
+.wfc-table__table.has-fixed-layout {
+	table-layout: fixed;
+}
+
+.wfc-table__table th,
+.wfc-table__table td {
+	border: var( --wfc-border-width, 1px ) var( --wfc-border-style, solid ) var( --wfc-border-color, #d0d0d0 );
+	padding: var( --wfc-cell-padding, 0.5em 0.75em );
+	text-align: left;
+	vertical-align: top;
+	overflow-wrap: break-word;
+	word-break: normal;
+	hyphens: auto;
+}
+
+.wfc-table__table thead th {
+	background-color: var( --wfc-header-bg, rgba( 0, 0, 0, 0.05 ) );
+	color: var( --wfc-header-color, inherit );
+	font-weight: bold;
+}
+
+.wfc-table__table tbody th {
+	font-weight: bold;
+}
+
+.wfc-table__table.is-striped tbody tr:nth-child( even ) > * {
+	background-color: var( --wfc-stripe-bg, rgba( 0, 0, 0, 0.04 ) );
+}
+
+.wfc-table__caption {
+	margin-top: 0.5em;
+	font-size: 0.875em;
+	text-align: center;
+	opacity: 0.8;
+}
+
+/* ── Mobile: "scroll" layout ──────────────────────────────────────────────── */
+/* With less than 600px of space, saved column widths become a guide rather
+   than exact: the browser keeps words whole and the table scrolls sideways
+   instead of squashing columns to a letter wide. */
+@container ( max-width: 600px ) {
+	.is-mobile-scroll .wfc-table__table.has-fixed-layout {
+		table-layout: auto;
+	}
+}
+
+/* ── Mobile: "stack" layout ───────────────────────────────────────────────── */
+/* Below 600px of available width each row becomes a card and every cell is
+   labelled with its column heading (data-label, written by save.js).
+   Not applied inside the editor (.wfc-table--editor), where you need the grid. */
+@container ( max-width: 600px ) {
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table {
+		min-width: 0 !important;
+		table-layout: auto;
+	}
+
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table,
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table tbody,
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table tr,
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table th,
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table td {
+		display: block;
+		width: 100% !important;
+		box-sizing: border-box;
+	}
+
+	/* Header row is replaced by the per-cell labels; keep it for screen readers. */
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table thead {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		overflow: hidden;
+		clip: rect( 0 0 0 0 );
+		white-space: nowrap;
+	}
+
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table colgroup {
+		display: none;
+	}
+
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table tr {
+		margin-bottom: 0.75em;
+		border: var( --wfc-border-width, 1px ) var( --wfc-border-style, solid ) var( --wfc-border-color, #d0d0d0 );
+	}
+
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table th,
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table td {
+		border-width: 0 0 var( --wfc-border-width, 1px );
+	}
+
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table tr > :last-child {
+		border-bottom: 0;
+	}
+
+	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table td[data-label]::before {
+		content: attr( data-label );
+		display: block;
+		margin-bottom: 0.2em;
+		font-size: 0.85em;
+		font-weight: bold;
+		opacity: 0.75;
+	}
+}
