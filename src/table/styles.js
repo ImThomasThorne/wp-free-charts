@@ -35,14 +35,33 @@ export function cellStyle( cell ) {
 		verticalAlign:   cell.valign || undefined,
 		fontSize:        fontSizeCss( cell.fontSize, cell.fontSizeSlug ),
 		fontFamily:      fontFamilyCss( cell.fontFamily, cell.fontFamilySlug ),
-		fontWeight:      cell.bold ? 'bold' : undefined,
+		// `bold` is the original on/off setting; fontWeight (any theme weight) replaces it.
+		fontWeight:      cell.fontWeight || ( cell.bold ? 'bold' : undefined ),
+		// Added in 2.1: keep these after the original properties (see note above).
+		fontStyle:       cell.fontStyle || undefined,
+		lineHeight:      cell.lineHeight || undefined,
+		letterSpacing:   cell.letterSpacing || undefined,
+		textTransform:   cell.textTransform || undefined,
+		textDecoration:  cell.textDecoration || undefined,
 	};
 	return Object.values( style ).some( Boolean ) ? style : undefined;
 }
 
+/**
+ * A spacing value: theme presets are stored as "var:preset|spacing|{slug}"
+ * (WordPress's format) and output as the theme's CSS variable; anything else
+ * (e.g. "12px") is output as-is.
+ */
+export function spacingCss( value ) {
+	if ( typeof value === 'string' && value.startsWith( 'var:preset|spacing|' ) ) {
+		return `var(--wp--preset--spacing--${ value.slice( 'var:preset|spacing|'.length ) })`;
+	}
+	return value;
+}
+
 function paddingCss( p ) {
 	if ( ! p || ! Object.values( p ).some( Boolean ) ) return undefined;
-	return [ p.top, p.right, p.bottom, p.left ].map( ( v ) => v || '0' ).join( ' ' );
+	return [ p.top, p.right, p.bottom, p.left ].map( ( v ) => spacingCss( v ) || '0' ).join( ' ' );
 }
 
 /**

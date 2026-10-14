@@ -29,6 +29,7 @@ import {
 	useBlockProps,
 	useSettings,
 } from '@wordpress/block-editor';
+import * as blockEditor from '@wordpress/block-editor';
 import {
 	Button,
 	FontSizePicker,
@@ -87,6 +88,19 @@ function findColorSlug( palette, value ) {
 	if ( ! value ) return undefined;
 	return palette.find( ( p ) => p.color?.toLowerCase() === value.toLowerCase() )?.slug;
 }
+
+/*
+ * WordPress's own typography and spacing controls (the ones core blocks use,
+ * fed by the theme's fonts, weights and spacing scale). They're marked
+ * experimental, so each is looked up at runtime and simply not shown if a
+ * WordPress version doesn't have it.
+ */
+const FontAppearanceControl = blockEditor.__experimentalFontAppearanceControl;
+const LineHeightControl     = blockEditor.LineHeightControl;
+const LetterSpacingControl  = blockEditor.__experimentalLetterSpacingControl;
+const TextTransformControl  = blockEditor.__experimentalTextTransformControl;
+const TextDecorationControl = blockEditor.__experimentalTextDecorationControl;
+const SpacingSizesControl   = blockEditor.__experimentalSpacingSizesControl;
 
 const ARROW_KEYS = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' };
 
@@ -591,11 +605,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 							<p className="wfc-hint">
 								{ sprintf( _n( '%d cell selected.', '%d cells selected.', selectionCount, 'wp-free-charts' ), selectionCount ) }
 							</p>
-							<ToggleControl
-								label={ __( 'Bold', 'wp-free-charts' ) }
-								checked={ !! primary?.bold }
-								onChange={ ( v ) => applyToSelection( { bold: v } ) }
-							/>
 							<SelectControl
 								label={ __( 'Horizontal alignment', 'wp-free-charts' ) }
 								value={ primary?.align || '' }
@@ -617,26 +626,6 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 								] }
 								onChange={ ( v ) => applyToSelection( { valign: v } ) }
 							/>
-							<FontSizePicker
-								fontSizes={ fontSizes }
-								value={ primary?.fontSize }
-								onChange={ setCellFontSize }
-								withReset
-							/>
-							{ fontFamilies.length > 0 && (
-								<SelectControl
-									label={ __( 'Font', 'wp-free-charts' ) }
-									value={ primary?.fontFamilySlug || '' }
-									options={ [
-										{ label: __( 'Default', 'wp-free-charts' ), value: '' },
-										...fontFamilies.map( ( f ) => ( { label: f.name || f.slug, value: f.slug } ) ),
-									] }
-									onChange={ ( slug ) => {
-										const font = fontFamilies.find( ( f ) => f.slug === slug );
-										applyToSelection( { fontFamily: font?.fontFamily, fontFamilySlug: font?.slug } );
-									} }
-								/>
-							) }
 							<div className="wfc-button-row">
 								<Button variant="secondary" size="small" onClick={ merge } disabled={ ! canMerge }>{ __( 'Merge cells', 'wp-free-charts' ) }</Button>
 								<Button variant="secondary" size="small" onClick={ split } disabled={ ! canSplit }>{ __( 'Split cell', 'wp-free-charts' ) }</Button>
@@ -647,6 +636,79 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						</>
 					) }
 				</PanelBody>
+
+				{ selectionCount > 0 && (
+					<PanelBody title={ __( 'Selected cell text', 'wp-free-charts' ) }>
+						{ fontFamilies.length > 0 && (
+							<SelectControl
+								label={ __( 'Font', 'wp-free-charts' ) }
+								value={ primary?.fontFamilySlug || '' }
+								options={ [
+									{ label: __( 'Default', 'wp-free-charts' ), value: '' },
+									...fontFamilies.map( ( f ) => ( { label: f.name || f.slug, value: f.slug } ) ),
+								] }
+								onChange={ ( slug ) => {
+									const font = fontFamilies.find( ( f ) => f.slug === slug );
+									applyToSelection( { fontFamily: font?.fontFamily, fontFamilySlug: font?.slug } );
+								} }
+							/>
+						) }
+						<FontSizePicker
+							fontSizes={ fontSizes }
+							value={ primary?.fontSize }
+							onChange={ setCellFontSize }
+							withReset
+						/>
+						{ FontAppearanceControl ? (
+							<FontAppearanceControl
+								value={ {
+									fontWeight: primary?.fontWeight || ( primary?.bold ? '700' : undefined ),
+									fontStyle:  primary?.fontStyle,
+								} }
+								// Only offer the weights/styles the chosen theme font actually has.
+								fontFamilyFaces={ fontFamilies.find( ( f ) => f.slug === primary?.fontFamilySlug )?.fontFace }
+								onChange={ ( { fontWeight, fontStyle } ) =>
+									applyToSelection( { fontWeight, fontStyle, bold: undefined } ) }
+								hasFontStyles
+								hasFontWeights
+								__nextHasNoMarginBottom
+							/>
+						) : (
+							<ToggleControl
+								label={ __( 'Bold', 'wp-free-charts' ) }
+								checked={ !! primary?.bold }
+								onChange={ ( v ) => applyToSelection( { bold: v } ) }
+							/>
+						) }
+						{ LineHeightControl && (
+							<LineHeightControl
+								value={ primary?.lineHeight }
+								onChange={ ( v ) => applyToSelection( { lineHeight: v } ) }
+								__nextHasNoMarginBottom
+								__unstableInputWidth="100%"
+							/>
+						) }
+						{ LetterSpacingControl && (
+							<LetterSpacingControl
+								value={ primary?.letterSpacing }
+								onChange={ ( v ) => applyToSelection( { letterSpacing: v } ) }
+								__unstableInputWidth="100%"
+							/>
+						) }
+						{ TextTransformControl && (
+							<TextTransformControl
+								value={ primary?.textTransform }
+								onChange={ ( v ) => applyToSelection( { textTransform: v === primary?.textTransform ? undefined : v } ) }
+							/>
+						) }
+						{ TextDecorationControl && (
+							<TextDecorationControl
+								value={ primary?.textDecoration }
+								onChange={ ( v ) => applyToSelection( { textDecoration: v === primary?.textDecoration ? undefined : v } ) }
+							/>
+						) }
+					</PanelBody>
+				) }
 
 				{ selectionCount > 0 && (
 					<PanelColorSettings
@@ -712,11 +774,24 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						] }
 						onChange={ ( v ) => setAttributes( { borderStyle: v } ) }
 					/>
-					<BoxControl
-						label={ __( 'Cell padding', 'wp-free-charts' ) }
-						values={ cellPadding }
-						onChange={ ( v ) => setAttributes( { cellPadding: v || {} } ) }
-					/>
+					{ /* Uses the theme's spacing scale (same presets as core blocks' padding) where available. */ }
+					{ SpacingSizesControl ? (
+						<SpacingSizesControl
+							label={ __( 'Cell padding', 'wp-free-charts' ) }
+							values={ cellPadding }
+							onChange={ ( v ) => setAttributes( { cellPadding: v || {} } ) }
+							sides={ [ 'top', 'right', 'bottom', 'left' ] }
+							splitOnAxis
+							allowReset
+							minimumCustomValue={ 0 }
+						/>
+					) : (
+						<BoxControl
+							label={ __( 'Cell padding', 'wp-free-charts' ) }
+							values={ cellPadding }
+							onChange={ ( v ) => setAttributes( { cellPadding: v || {} } ) }
+						/>
+					) }
 					{ colWidths.length > 0 && (
 						<Button variant="secondary" size="small" onClick={ () => setAttributes( { colWidths: [] } ) }>
 							{ __( 'Reset column widths', 'wp-free-charts' ) }

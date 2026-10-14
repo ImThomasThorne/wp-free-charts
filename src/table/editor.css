@@ -4,6 +4,22 @@
  * setup placeholder.
  */
 
+/* ── Table frame in the editor ────────────────────────────────────────────── */
+/* The front end hides cells' outer edges and draws a (possibly rounded) frame
+   with table::after. In the editor the handle row/column sit inside the
+   table, so use plain cell borders instead and skip the frame. */
+.wp-block-wp-free-charts-table.wfc-table--editor .wfc-table__table {
+	border-style: none;
+}
+
+.wp-block-wp-free-charts-table.wfc-table--editor .wfc-table__table::after {
+	display: none;
+}
+
+.wp-block-wp-free-charts-table.wfc-table--editor .wfc-table__scroll {
+	border-radius: 0;
+}
+
 /* ── Handles (row numbers, column letters) ────────────────────────────────── */
 .wfc-table--editor .wfc-handle-col {
 	width: 28px;

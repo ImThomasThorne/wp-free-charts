@@ -169,7 +169,7 @@ try {
 	fs.writeFileSync( `${ OUT }/saved-content.html`, await page.evaluate( () => wp.data.select( 'core/editor' ).getEditedPostContent() ) );
 
 	// Reload the editor: block must still be valid.
-	await page.goto( `${ BASE }/wp-admin/post.php?post=${ postId }&action=edit`, { waitUntil: 'domcontentloaded' } );
+	await page.goto( `${ BASE }/wp-admin/post.php?post=${ postId }&action=edit`, { waitUntil: 'domcontentloaded', timeout: 120000 } );
 	await page.waitForFunction( () => wp.data.select( 'core/block-editor' ).getBlocks().length > 0, null, { timeout: 120000 } );
 	log( 'valid after reload:', await page.evaluate( () => wp.data.select( 'core/block-editor' ).getBlocks().map( ( b ) => `${ b.name }:${ b.isValid }` ).join( ', ' ) ) );
 

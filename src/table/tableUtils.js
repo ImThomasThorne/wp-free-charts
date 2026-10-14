@@ -14,7 +14,8 @@
 /** Per-cell formatting keys (copied to new rows/columns, cleared by "clear formatting"). */
 export const STYLE_KEYS = [
 	'bg', 'bgSlug', 'color', 'colorSlug', 'align', 'valign', 'fontSize', 'fontSizeSlug',
-	'fontFamily', 'fontFamilySlug', 'bold',
+	'fontFamily', 'fontFamilySlug', 'bold', 'fontWeight', 'fontStyle', 'lineHeight',
+	'letterSpacing', 'textTransform', 'textDecoration',
 ];
 
 export const key = ( r, c ) => `${ r }-${ c }`;

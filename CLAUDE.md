@@ -105,6 +105,25 @@ the `react-jsx-runtime` script handle).
   `selectionChange(clientId, 'cell-r-c', offset, offset)`, never by setting the DOM caret:** RichText
   resets a hand-set caret on focus. Multi-cell paste triggers only when the clipboard has a tab or an
   HTML `<table>` (what Excel/Sheets put there); `parseClipboardGrid` handles quoted cells.
+- **2.0.0 is live, so tables exist on real sites.** Style changes must work with the existing saved markup.
+  Restyle through style.css (not validated) or by adding *optional* attributes/keys that output nothing
+  when unset. `tools/editor-test/table-styles.test.mjs <out> <oldPostIds…>` re-checks old posts.
+- **Look and theme integration:** the outer border is drawn by `table::after` (cells' outer edges are
+  hidden with `border-style: hidden`), so it can follow the block's Border → Radius (block supports, on
+  the `<figure>`, inherited down). The editor turns this off, because the handles sit inside the table.
+  Default header/stripe tints are `color-mix(currentColor …)`, so they work on dark themes. Selectors are
+  prefixed `.wp-block-wp-free-charts-table` to beat theme table CSS.
+- **Mobile cards:** labels sit in a header-coloured column. The background is a gradient on the `td`
+  (always full height) and the label is a float in the `td`'s left padding (`--wfc-label-w`, in `cqi`).
+  Don't use grid/flex on the `td`: inline formatting in cell content would split into separate items.
+  Cards force `text-align: left !important` and use `--wp--style--block-gap` between cards.
+- **Theme controls:** cell padding uses `__experimentalSpacingSizesControl`, which stores
+  `var:preset|spacing|x`; `styles.js spacingCss()` turns that into the CSS var. Cell typography uses the
+  block-editor controls (FontAppearance with the font's `fontFace` weights, LineHeight, LetterSpacing,
+  TextTransform, TextDecoration). These are looked up at runtime from `@wordpress/block-editor` and
+  hidden if missing. In block.json, `__experimentalDefaultControls` keys are `fontFamily`,
+  `fontAppearance`, `letterSpacing`, `textTransform` and `textDecoration`. These are not the `__experimental…`
+  names used to enable them; with the wrong names the controls hide under ⋮.
 - `cellStyle()` property order is part of saved markup. Add new properties only if they're undefined
   for existing cells (as `fontFamily` was).
 - The same **block-validation rule** as the chart applies: changing save.js output needs a `deprecated`
@@ -123,8 +142,9 @@ powershell -ExecutionPolicy Bypass -File tools\visual-check\shoot.ps1   # chart 
 **Real-editor testing (table block, or anything editor-side):** WordPress Playground runs
 WordPress in Node with no Docker or PHP install. Start it in the background with the repo mounted,
 then drive it with `tools/editor-test/table-editor.test.mjs` (create/type/select/merge/colour/resize/
-responsive screenshots) and `table-stage4.test.mjs` (arrow keys, paste, fonts, transforms; prints
-PASS/FAIL), using playwright-core + installed Edge, headless. Copy the test files into the scratch
+responsive screenshots), `table-stage4.test.mjs` (arrow keys, paste, fonts, transforms) and
+`table-styles.test.mjs` (cards, stripes, radius, theme spacing/typography panels, old-post validity).
+The last two print PASS/FAIL. They use using playwright-core + installed Edge, headless. Copy the test files into the scratch
 folder that has playwright-core so the import resolves. See the header of that file for the exact commands. Use `--mount-dir <path> <vfs>`, since the
 `--mount=a:b` form can't parse Windows drive letters. Install playwright-core in a scratch folder,
 not in the repo. The editor canvas is an iframe (`iframe[name="editor-canvas"]`). Close the welcome
