@@ -10,18 +10,35 @@
  * against this function's output. Changing the markup (elements, classes,
  * attributes, inline styles) breaks existing tables unless you add a
  * `deprecated` entry in index.js holding the previous version of save().
+ *
+ * Versions (createSave options):
+ *  - 2.0.x: card labels with header line breaks turned into spaces
+ *           → `saveV1`, used by the deprecation in index.js
+ *  - 2.1+:  card labels keep header line breaks ("\n" in data-label)
  */
 import { useBlockProps, RichText } from '@wordpress/block-editor';
 import { getHeaderRowCount, getColumnLabels } from './tableUtils';
 import { cellStyle, tableStyle, tableClassName } from './styles';
 
-export default function save( { attributes } ) {
+function createSave( { labelLineBreaks } ) {
+	return function save( { attributes } ) {
+		return renderTable( attributes, { labelLineBreaks } );
+	};
+}
+
+/** Saved markup for 2.1+ tables. */
+export default createSave( { labelLineBreaks: true } );
+
+/** Saved markup for tables created with 2.0.x (see the deprecation in index.js). */
+export const saveV1 = createSave( { labelLineBreaks: false } );
+
+function renderTable( attributes, { labelLineBreaks } ) {
 	const { cells, colWidths, hasHeaderRow, hasHeaderColumn, mobileLayout, hasCaption, caption } = attributes;
 	if ( ! cells?.length ) return null;
 
 	const headerRows = hasHeaderRow ? getHeaderRowCount( cells ) : 0;
 	// Column headings repeated on each cell in the mobile "stack" layout.
-	const labels     = hasHeaderRow ? getColumnLabels( cells ) : [];
+	const labels     = hasHeaderRow ? getColumnLabels( cells, { lineBreaks: labelLineBreaks } ) : [];
 
 	const blockProps = useBlockProps.save( {
 		className: `is-mobile-${ mobileLayout || 'scroll' }`,

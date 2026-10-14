@@ -124,6 +124,17 @@ the `react-jsx-runtime` script handle).
   hidden if missing. In block.json, `__experimentalDefaultControls` keys are `fontFamily`,
   `fontAppearance`, `letterSpacing`, `textTransform` and `textDecoration`. These are not the `__experimental…`
   names used to enable them; with the wrong names the controls hide under ⋮.
+- **Deprecations (table):** `save.js` builds each saved version from one `renderTable()` via
+  `createSave( options )`. The current version is the default export; older ones are named exports
+  (`saveV1` = 2.0.x, card labels with spaces instead of line breaks) listed in `deprecated` in
+  `src/table/index.js`, newest first. To change saved markup, add an option, make the new behaviour the
+  default, and add the old one as a deprecation. Test it by saving a table with the *old* build first,
+  then rebuilding (see `tools/editor-test/table-borders.test.mjs`, which takes that post id). WordPress
+  only re-serialises a block (and so upgrades it) when the post is edited.
+- **Outer border:** `outerBorder*` attributes become `--wfc-outer-border-*`, combined with the cell-border
+  fallbacks into `--wfc-frame` on the table. It's used by `table::after` (the frame) and by mobile cards
+  (`tr`). In the editor the frame is inset past the handles using `--wfc-frame-top/left`, which edit.js
+  measures from cell A1, with the radius passed as `--wfc-editor-radius`. Both are editor-only inline vars.
 - `cellStyle()` property order is part of saved markup. Add new properties only if they're undefined
   for existing cells (as `fontFamily` was).
 - The same **block-validation rule** as the chart applies: changing save.js output needs a `deprecated`
@@ -143,7 +154,8 @@ powershell -ExecutionPolicy Bypass -File tools\visual-check\shoot.ps1   # chart 
 WordPress in Node with no Docker or PHP install. Start it in the background with the repo mounted,
 then drive it with `tools/editor-test/table-editor.test.mjs` (create/type/select/merge/colour/resize/
 responsive screenshots), `table-stage4.test.mjs` (arrow keys, paste, fonts, transforms) and
-`table-styles.test.mjs` (cards, stripes, radius, theme spacing/typography panels, old-post validity).
+`table-styles.test.mjs` (cards, stripes, radius, theme spacing/typography panels, old-post validity) and
+`table-borders.test.mjs` (outer border, card label line breaks, 2.0.x deprecation).
 The last two print PASS/FAIL. They use using playwright-core + installed Edge, headless. Copy the test files into the scratch
 folder that has playwright-core so the import resolves. See the header of that file for the exact commands. Use `--mount-dir <path> <vfs>`, since the
 `--mount=a:b` form can't parse Windows drive letters. Install playwright-core in a scratch folder,

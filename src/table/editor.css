@@ -5,15 +5,16 @@
  */
 
 /* ── Table frame in the editor ────────────────────────────────────────────── */
-/* The front end hides cells' outer edges and draws a (possibly rounded) frame
-   with table::after. In the editor the handle row/column sit inside the
-   table, so use plain cell borders instead and skip the frame. */
-.wp-block-wp-free-charts-table.wfc-table--editor .wfc-table__table {
-	border-style: none;
-}
-
+/* As on the front end, cells' outer edges are hidden and table::after draws
+   the outer border. Here the handle row and column sit inside the table, so
+   the frame is inset past them (edit.js measures where cell A1 starts and
+   sets --wfc-frame-top/left), and the handle cells use border-style "hidden"
+   so the data cells' top/left outer edges are hidden too. The radius also
+   comes from edit.js (--wfc-editor-radius), as the scroll box isn't rounded
+   here (it would clip the handles). */
 .wp-block-wp-free-charts-table.wfc-table--editor .wfc-table__table::after {
-	display: none;
+	inset: var( --wfc-frame-top, 24px ) 0 0 var( --wfc-frame-left, 28px );
+	border-radius: var( --wfc-editor-radius, 0 );
 }
 
 .wp-block-wp-free-charts-table.wfc-table--editor .wfc-table__scroll {
@@ -27,9 +28,11 @@
 
 .wfc-table--editor .wfc-table__table td.wfc-handle {
 	position: relative;
+	box-sizing: border-box;
 	width: 28px;
 	padding: 0;
-	border: 0;
+	border-width: 0;
+	border-style: hidden;
 	background: transparent;
 	vertical-align: middle;
 	text-align: center;
@@ -61,7 +64,9 @@
 	color: #fff;
 }
 
+/* Fixed 24px handle row (20px button + 4px gap): the frame inset relies on it. */
 .wfc-table--editor .wfc-col-handles td.wfc-handle {
+	height: 24px;
 	padding-bottom: 4px;
 }
 
@@ -136,6 +141,18 @@
 
 .wfc-table-setup .components-base-control__field {
 	margin-bottom: 0;
+}
+
+.wfc-table-subheading {
+	margin: 16px 0 8px;
+	font-size: 11px;
+	font-weight: 500;
+	text-transform: uppercase;
+	color: #1e1e1e;
+}
+
+.wfc-table-subheading:first-child {
+	margin-top: 0;
 }
 
 .wfc-button-row {

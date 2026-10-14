@@ -83,6 +83,22 @@
       "type": "object",
       "default": {}
     },
+    "outerBorderColor": {
+      "type": "string",
+      "default": ""
+    },
+    "outerBorderColorSlug": {
+      "type": "string",
+      "default": ""
+    },
+    "outerBorderWidth": {
+      "type": "string",
+      "default": ""
+    },
+    "outerBorderStyle": {
+      "type": "string",
+      "default": ""
+    },
     "mobileLayout": {
       "type": "string",
       "default": "scroll"

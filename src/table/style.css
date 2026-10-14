@@ -48,13 +48,19 @@
 	   border instead, so it can follow rounded corners. ("hidden" wins over
 	   any cell border in the collapsing model, merged cells included.) */
 	border-style: hidden;
+	/* Outer border (frame around the table, and around each mobile card).
+	   Each part falls back to the cell border setting when not set. */
+	--wfc-frame:
+		var( --wfc-outer-border-width, var( --wfc-border-width, 1px ) )
+		var( --wfc-outer-border-style, var( --wfc-border-style, solid ) )
+		var( --wfc-outer-border-color, var( --wfc-border-color, #d0d0d0 ) );
 }
 
 .wp-block-wp-free-charts-table .wfc-table__table::after {
 	content: "";
 	position: absolute;
 	inset: 0;
-	border: var( --wfc-border-width, 1px ) var( --wfc-border-style, solid ) var( --wfc-border-color, #d0d0d0 );
+	border: var( --wfc-frame );
 	border-radius: inherit;
 	pointer-events: none;
 }
@@ -162,9 +168,10 @@
 		border-radius: inherit;
 	}
 
+	/* Each card is framed with the table's outer border. */
 	.is-mobile-stack:not( .wfc-table--editor ) .wfc-table__table tr {
 		overflow: hidden;
-		border: var( --wfc-border-width, 1px ) var( --wfc-border-style, solid ) var( --wfc-border-color, #d0d0d0 );
+		border: var( --wfc-frame );
 		border-radius: inherit;
 	}
 
@@ -207,6 +214,8 @@
 		color: var( --wfc-header-color, inherit );
 		font-weight: bold;
 		overflow-wrap: anywhere;
+		/* Labels keep the header cell's line breaks ("\n" in data-label). */
+		white-space: pre-line;
 	}
 
 	/* "First column as row headings": the row heading becomes the card title. */

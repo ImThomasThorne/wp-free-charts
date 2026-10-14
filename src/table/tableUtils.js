@@ -291,26 +291,38 @@ export function getHeaderRowCount( cells ) {
 	return n;
 }
 
-export function stripTags( html ) {
-	return String( html ?? '' )
-		.replace( /<br\s*\/?>/gi, ' ' )
+/**
+ * Plain text from cell HTML. Line breaks (<br>) become spaces, or with
+ * { lineBreaks: true } are kept as "\n" (shown by CSS white-space: pre-line).
+ */
+export function stripTags( html, { lineBreaks = false } = {} ) {
+	const text = String( html ?? '' )
+		.replace( /<br\s*\/?>/gi, lineBreaks ? '\n' : ' ' )
 		.replace( /<[^>]*>/g, '' )
 		.replace( /&nbsp;/g, ' ' )
 		.replace( /&amp;/g, '&' )
 		.replace( /&lt;/g, '<' )
 		.replace( /&gt;/g, '>' )
 		.replace( /&quot;/g, '"' )
-		.replace( /&#0?39;/g, "'" )
-		.replace( /\s+/g, ' ' )
+		.replace( /&#0?39;/g, "'" );
+	if ( ! lineBreaks ) return text.replace( /\s+/g, ' ' ).trim();
+	return text
+		.replace( /[^\S\n]+/g, ' ' )  // collapse spaces/tabs, keep newlines
+		.replace( / ?\n ?/g, '\n' )
+		.replace( /\n{2,}/g, '\n' )
 		.trim();
 }
 
-/** Plain-text label for each column, from the first row (used by the mobile "stack" layout). */
-export function getColumnLabels( cells ) {
+/**
+ * Plain-text label for each column, from the first row (used by the mobile
+ * "stack" layout). Since 2.1 labels keep the header's line breaks; 2.0.x
+ * saved them with spaces (the deprecated save in index.js still does).
+ */
+export function getColumnLabels( cells, { lineBreaks = false } = {} ) {
 	const { cols } = dims( cells );
 	return Array.from( { length: cols }, ( _, c ) => {
 		const [ or, oc ] = findOrigin( cells, 0, c );
-		return stripTags( cells[ or ][ oc ].content );
+		return stripTags( cells[ or ][ oc ].content, { lineBreaks } );
 	} );
 }
 

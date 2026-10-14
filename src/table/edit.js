@@ -20,7 +20,7 @@
  *  - pasting tab-separated data (Excel/Sheets) fills cells from the caret's
  *    cell, growing the table; anything else pastes normally into one cell
  */
-import { useState, useEffect, useRef } from '@wordpress/element';
+import { useState, useEffect, useLayoutEffect, useRef } from '@wordpress/element';
 import {
 	BlockControls,
 	InspectorControls,
@@ -67,6 +67,31 @@ const BORDER_UNITS = [
 	{ value: 'px', label: 'px', default: 1 },
 	{ value: 'em', label: 'em', default: 0.1 },
 ];
+
+const BORDER_STYLES = [
+	{ label: __( 'Solid', 'wp-free-charts' ),  value: 'solid' },
+	{ label: __( 'Dashed', 'wp-free-charts' ), value: 'dashed' },
+	{ label: __( 'Dotted', 'wp-free-charts' ), value: 'dotted' },
+	{ label: __( 'Double', 'wp-free-charts' ), value: 'double' },
+	{ label: __( 'None', 'wp-free-charts' ),   value: 'none' },
+];
+
+/**
+ * Block border radius (Styles → Border) as CSS, for the editor-only frame.
+ * It may be one value or per corner, and theme presets look like
+ * "var:preset|border-radius|{slug}".
+ */
+function radiusCss( radius ) {
+	const one = ( v ) => {
+		if ( typeof v === 'string' && v.startsWith( 'var:preset|border-radius|' ) ) {
+			return `var(--wp--preset--border-radius--${ v.slice( 'var:preset|border-radius|'.length ) })`;
+		}
+		return v || '0';
+	};
+	if ( ! radius ) return undefined;
+	if ( typeof radius === 'string' ) return one( radius );
+	return [ radius.topLeft, radius.topRight, radius.bottomRight, radius.bottomLeft ].map( one ).join( ' ' );
+}
 
 const MIN_WIDTH_UNITS = [
 	{ value: 'px', label: 'px', default: 600 },
@@ -226,6 +251,7 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 		cells, colWidths, hasHeaderRow, hasHeaderColumn, striped,
 		headerBg, headerColor, stripeBg, borderColor, borderWidth, borderStyle,
 		cellPadding, mobileLayout, minWidth, hasCaption, caption,
+		outerBorderColor, outerBorderWidth, outerBorderStyle,
 	} = attributes;
 
 	const [ selection, setSelection ]   = useState( [] );
@@ -251,6 +277,28 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 	// Latest values for the native event listeners below (they're attached once).
 	const latest = useRef( {} );
 	latest.current = { cells, colWidths, setAttributes, setSelection, selectionChange, clientId };
+
+	// Where the data cells start inside the editor table (past the handle row
+	// and column), so the outer-border frame can be drawn around just them.
+	// Measured rather than assumed: the handle column's width varies.
+	const [ frameInset, setFrameInset ] = useState( null );
+	const measureFrame = () => {
+		const table = tableRef.current;
+		const first = table?.querySelector( '[data-cell="0-0"]' );
+		if ( ! first ) return;
+		const t = table.getBoundingClientRect();
+		const f = first.getBoundingClientRect();
+		const next = { top: Math.round( f.top - t.top ), left: Math.round( f.left - t.left ) };
+		setFrameInset( ( prev ) => ( prev?.top === next.top && prev?.left === next.left ? prev : next ) );
+	};
+	useLayoutEffect( measureFrame ); // after every render (cheap; only updates on change)
+	useEffect( () => {
+		const table = tableRef.current;
+		if ( ! table || typeof ResizeObserver === 'undefined' ) return;
+		const ro = new ResizeObserver( measureFrame );
+		ro.observe( table );
+		return () => ro.disconnect();
+	}, [ cells?.length > 0 ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Arrow-key navigation between cells and multi-cell paste from spreadsheets.
 	// Native capture-phase listeners on the table run before the editor's own
@@ -751,29 +799,49 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 						{ label: __( 'Header background', 'wp-free-charts' ), value: headerBg,    onChange: setTableColor( 'headerBg' ) },
 						{ label: __( 'Header text', 'wp-free-charts' ),       value: headerColor, onChange: setTableColor( 'headerColor' ) },
 						{ label: __( 'Stripe background', 'wp-free-charts' ), value: stripeBg,    onChange: setTableColor( 'stripeBg' ) },
-						{ label: __( 'Border', 'wp-free-charts' ),            value: borderColor, onChange: setTableColor( 'borderColor' ) },
+						{ label: __( 'Cell borders', 'wp-free-charts' ),      value: borderColor, onChange: setTableColor( 'borderColor' ) },
+						{ label: __( 'Outer border', 'wp-free-charts' ),      value: outerBorderColor, onChange: setTableColor( 'outerBorderColor' ) },
 					] }
 				/>
 
 				<PanelBody title={ __( 'Borders & spacing', 'wp-free-charts' ) } initialOpen={ false }>
+					<p className="wfc-table-subheading">{ __( 'Cell borders (between cells)', 'wp-free-charts' ) }</p>
 					<UnitControl
-						label={ __( 'Border width', 'wp-free-charts' ) }
+						label={ __( 'Width', 'wp-free-charts' ) }
 						value={ borderWidth }
 						min={ 0 }
 						units={ BORDER_UNITS }
 						onChange={ ( v ) => setAttributes( { borderWidth: v || '0px' } ) }
 					/>
 					<SelectControl
-						label={ __( 'Border style', 'wp-free-charts' ) }
+						label={ __( 'Style', 'wp-free-charts' ) }
 						value={ borderStyle }
-						options={ [
-							{ label: __( 'Solid', 'wp-free-charts' ),  value: 'solid' },
-							{ label: __( 'Dashed', 'wp-free-charts' ), value: 'dashed' },
-							{ label: __( 'Dotted', 'wp-free-charts' ), value: 'dotted' },
-							{ label: __( 'None', 'wp-free-charts' ),   value: 'none' },
-						] }
+						options={ BORDER_STYLES }
 						onChange={ ( v ) => setAttributes( { borderStyle: v } ) }
 					/>
+
+					<p className="wfc-table-subheading">{ __( 'Outer border (around the table and mobile cards)', 'wp-free-charts' ) }</p>
+					<UnitControl
+						label={ __( 'Width', 'wp-free-charts' ) }
+						value={ outerBorderWidth }
+						min={ 0 }
+						units={ BORDER_UNITS }
+						placeholder={ borderWidth }
+						help={ ! outerBorderWidth ? __( 'Same as cell borders until set.', 'wp-free-charts' ) : undefined }
+						onChange={ ( v ) => setAttributes( { outerBorderWidth: v || '' } ) }
+					/>
+					<SelectControl
+						label={ __( 'Style', 'wp-free-charts' ) }
+						value={ outerBorderStyle }
+						options={ [
+							{ label: __( 'Same as cell borders', 'wp-free-charts' ), value: '' },
+							...BORDER_STYLES,
+						] }
+						onChange={ ( v ) => setAttributes( { outerBorderStyle: v } ) }
+					/>
+					<p className="wfc-hint">{ __( 'Colour: see "Header, stripe & border colours".', 'wp-free-charts' ) }</p>
+
+					<p className="wfc-table-subheading">{ __( 'Spacing', 'wp-free-charts' ) }</p>
 					{ /* Uses the theme's spacing scale (same presets as core blocks' padding) where available. */ }
 					{ SpacingSizesControl ? (
 						<SpacingSizesControl
@@ -826,7 +894,17 @@ export default function Edit( { attributes, setAttributes, isSelected, clientId 
 
 			<figure { ...blockProps }>
 				<div className="wfc-table__scroll">
-					<table ref={ tableRef } className={ tableClassName( { striped, colWidths: widths } ) } style={ tableStyle( attributes ) }>
+					<table
+						ref={ tableRef }
+						className={ tableClassName( { striped, colWidths: widths } ) }
+						style={ {
+							...tableStyle( attributes ),
+							// Editor-only (never saved): frame position and corner radius.
+							'--wfc-editor-radius': radiusCss( attributes.style?.border?.radius ),
+							'--wfc-frame-top':     frameInset ? `${ frameInset.top }px` : undefined,
+							'--wfc-frame-left':    frameInset ? `${ frameInset.left }px` : undefined,
+						} }
+					>
 						<colgroup>
 							<col className="wfc-handle-col" />
 							{ Array.from( { length: cols }, ( _, c ) => (

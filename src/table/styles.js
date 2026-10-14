@@ -72,6 +72,7 @@ export function tableStyle( attributes ) {
 	const {
 		headerBg, headerBgSlug, headerColor, headerColorSlug, stripeBg, stripeBgSlug,
 		borderColor, borderColorSlug, borderWidth, borderStyle, cellPadding, minWidth,
+		outerBorderColor, outerBorderColorSlug, outerBorderWidth, outerBorderStyle,
 	} = attributes;
 	const style = {
 		'--wfc-header-bg':    colorCss( headerBg, headerBgSlug ),
@@ -82,6 +83,11 @@ export function tableStyle( attributes ) {
 		'--wfc-border-style': borderStyle || undefined,
 		'--wfc-cell-padding': paddingCss( cellPadding ),
 		minWidth:             minWidth || undefined,
+		// Added in 2.1 (after the original keys, and only when set, so older
+		// tables save identically). Unset parts fall back to the cell border.
+		'--wfc-outer-border-color': colorCss( outerBorderColor, outerBorderColorSlug ),
+		'--wfc-outer-border-width': outerBorderWidth || undefined,
+		'--wfc-outer-border-style': outerBorderStyle || undefined,
 	};
 	for ( const k of Object.keys( style ) ) {
 		if ( style[ k ] === undefined ) delete style[ k ];

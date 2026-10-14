@@ -185,6 +185,12 @@ test( 'column labels come from the first row as plain text', () => {
 	assert.deepEqual( getColumnLabels( g ), [ 'Name & age', '0,1 0,2', '0,1 0,2' ] );
 } );
 
+test( 'column labels can keep header line breaks (2.1+), default stays as 2.0 (spaces)', () => {
+	const g = [ [ { content: 'Hours<br>per week' }, { content: 'Contact <br/> <em>email</em>  or phone' } ], [ { content: '' }, { content: '' } ] ];
+	assert.deepEqual( getColumnLabels( g ), [ 'Hours per week', 'Contact email or phone' ] );
+	assert.deepEqual( getColumnLabels( g, { lineBreaks: true } ), [ 'Hours\nper week', 'Contact\nemail or phone' ] );
+} );
+
 test( 'updateCells removes keys set to empty values; clearFormatting keeps content', () => {
 	let g = labelled( 1, 1 );
 	g = updateCells( g, [ '0-0' ], { bg: '#000', align: 'center' } );
