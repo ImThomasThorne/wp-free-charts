@@ -11,11 +11,14 @@
   "textdomain": "wp-free-charts",
   "editorScript": "file:./index.js",
   "render": "file:./render.php",
-  "usesContext": [ "wp-free-charts/showText" ],
+  "usesContext": [ "wp-free-charts/showText", "postId", "postType" ],
   "attributes": {
-    "type":  { "type": "string", "default": "email" },
-    "value": { "type": "string", "default": "" },
-    "label": { "type": "string", "default": "" }
+    "type":      { "type": "string", "default": "email" },
+    "value":     { "type": "string", "default": "" },
+    "label":     { "type": "string", "default": "" },
+    "source":    { "type": "string", "default": "manual" },
+    "field":     { "type": "string", "default": "" },
+    "fieldFrom": { "type": "string", "default": "post" }
   },
   "styles": [
     { "name": "plain", "label": "Plain", "isDefault": true },

@@ -164,12 +164,19 @@ the `react-jsx-runtime` script handle).
   RichText HTML. The canvas text edits `label` when set, otherwise `value`. The `<a>` is the block wrapper,
   so colour/typography/padding/border supports land on it. Phone links keep digits and a leading `+`;
   emails go through `sanitize_email`; an empty or invalid value outputs nothing.
+- **Custom fields:** `source: 'field'` + `field` (name) + `fieldFrom` (`post` | `option` | `author`) read
+  the detail at render time in `wp_free_charts_contact_field_value()` (item/render.php). `post` uses the
+  `postId` context, so it works per post inside a Query Loop. The editor shows "Field: name" instead of a
+  value. **Security:** Authors can add these blocks and output is public, so it only reads ACF fields
+  (`get_field_object`) or, for `post` only, unprotected post meta. Never read raw `get_option` /
+  `get_user_meta`, names starting with `_`, or non-scalar values. Test with `blueprint-acf.json`
+  (installs ACF, loads `acf/fields.php` as an mu-plugin, runs `acf/setup.php`) and `contact-acf.test.mjs`.
 - **Styles:** "Plain" (theme link look) and "Button" (adds `wp-element-button`, so theme.json button
   styles apply; a zero-specificity 9999px radius copies core/button's default).
 - **Icons** are in both `icons.js` (editor) and `item/render.php` (front end); keep them identical.
   Draw them as **filled shapes, never stroke-only outlines**: the editor's block-icon CSS and many
   themes force `fill: currentColor` on SVGs, which turns outlines into solid boxes.
-- Test: `tools/editor-test/contact.test.mjs <outDir>` (prints PASS/FAIL).
+- Tests: `tools/editor-test/contact.test.mjs <outDir>` and `contact-acf.test.mjs <outDir>` (print PASS/FAIL).
 
 ## Commands
 

@@ -19,7 +19,9 @@
   "editorScript": "file:./index.js",
   "render": "file:./render.php",
   "usesContext": [
-    "wp-free-charts/showText"
+    "wp-free-charts/showText",
+    "postId",
+    "postType"
   ],
   "attributes": {
     "type": {
@@ -33,6 +35,18 @@
     "label": {
       "type": "string",
       "default": ""
+    },
+    "source": {
+      "type": "string",
+      "default": "manual"
+    },
+    "field": {
+      "type": "string",
+      "default": ""
+    },
+    "fieldFrom": {
+      "type": "string",
+      "default": "post"
     }
   },
   "styles": [

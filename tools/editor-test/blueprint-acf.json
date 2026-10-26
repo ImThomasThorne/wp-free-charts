@@ -1,0 +1,11 @@
+{
+  "landingPage": "/wp-admin/",
+  "login": true,
+  "steps": [
+    { "step": "activatePlugin", "pluginPath": "wp-free-charts/wp-free-charts.php" },
+    { "step": "installPlugin", "pluginData": { "resource": "wordpress.org/plugins", "slug": "advanced-custom-fields" } },
+    { "step": "mkdir", "path": "/wordpress/wp-content/mu-plugins" },
+    { "step": "writeFile", "path": "/wordpress/wp-content/mu-plugins/wfc-acf-test.php", "data": "<?php require '/wordpress/wp-content/plugins/wp-free-charts/tools/editor-test/acf/fields.php';" },
+    { "step": "runPHP", "code": "<?php require '/wordpress/wp-content/plugins/wp-free-charts/tools/editor-test/acf/setup.php';" }
+  ]
+}

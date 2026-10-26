@@ -59,10 +59,71 @@ $wfc_types = array(
 	),
 );
 
+if ( ! function_exists( 'wp_free_charts_contact_field_value' ) ) {
+	/**
+	 * Read a contact detail from a custom field. Blocks can be added by Authors
+	 * and the value is shown publicly, so this only reads:
+	 *  - post:   the field on the current post (each post inside a Query Loop):
+	 *            the ACF field, or else plain post meta that isn't protected ("_…");
+	 *  - option: an ACF field on an Options page;
+	 *  - author: an ACF field on the post author's user profile.
+	 * Raw wp_options and user meta are never read. Only text/number values count.
+	 *
+	 * @param string   $name  Field name.
+	 * @param string   $from  'post', 'option' or 'author'.
+	 * @param WP_Block $block Block instance (for the postId context).
+	 * @return string Plain text, or '' when there's nothing usable.
+	 */
+	function wp_free_charts_contact_field_value( $name, $from, $block ) {
+		if ( ! preg_match( '/^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/', $name ) ) {
+			return '';
+		}
+		$post_id = isset( $block->context['postId'] ) ? (int) $block->context['postId'] : (int) get_the_ID();
+		$has_acf = function_exists( 'get_field_object' );
+
+		if ( 'option' === $from ) {
+			$target = 'option';
+		} elseif ( 'author' === $from ) {
+			$author = $post_id ? (int) get_post_field( 'post_author', $post_id ) : 0;
+			if ( ! $author ) {
+				return '';
+			}
+			$target = 'user_' . $author;
+		} else {
+			if ( ! $post_id ) {
+				return '';
+			}
+			$target = $post_id;
+		}
+
+		$value = null;
+		if ( $has_acf ) {
+			$field = get_field_object( $name, $target );
+			if ( is_array( $field ) && isset( $field['value'] ) ) {
+				$value = $field['value'];
+			}
+		}
+		if ( null === $value && 'post' === $from && ! is_protected_meta( $name, 'post' ) ) {
+			$value = get_post_meta( $post_id, $name, true );
+		}
+
+		return is_scalar( $value ) && ! is_bool( $value ) ? wp_free_charts_contact_plain( $value ) : '';
+	}
+}
+
 $wfc_type_name = isset( $attributes['type'], $wfc_types[ $attributes['type'] ] ) ? $attributes['type'] : 'email';
 $wfc_type      = $wfc_types[ $wfc_type_name ];
-$wfc_value     = wp_free_charts_contact_plain( isset( $attributes['value'] ) ? $attributes['value'] : '' );
 $wfc_label     = wp_free_charts_contact_plain( isset( $attributes['label'] ) ? $attributes['label'] : '' );
+
+if ( isset( $attributes['source'] ) && 'field' === $attributes['source'] ) {
+	$wfc_value = wp_free_charts_contact_field_value(
+		isset( $attributes['field'] ) ? (string) $attributes['field'] : '',
+		isset( $attributes['fieldFrom'] ) ? (string) $attributes['fieldFrom'] : 'post',
+		$block
+	);
+} else {
+	$wfc_value = wp_free_charts_contact_plain( isset( $attributes['value'] ) ? $attributes['value'] : '' );
+}
 
 $wfc_link = '' === $wfc_value ? null : call_user_func( $wfc_type['link'], $wfc_value );
 if ( ! $wfc_link ) {

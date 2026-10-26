@@ -28,6 +28,12 @@
 	height: 1.5em;
 }
 
+/* Editor only: the "Field: name" placeholder for items read from a custom field. */
+.wp-block-wp-free-charts-contact-item .wfc-contact-item__field {
+	font-style: italic;
+	opacity: 0.75;
+}
+
 /* Button style: the theme's button look comes from .wp-element-button.
    Keep the icon and text on one line inside the button. */
 .wp-block-wp-free-charts-contact-item.is-style-button {
