@@ -29,6 +29,9 @@ const openEditor = async ( url ) => {
 	await page.goto( url, { waitUntil: 'domcontentloaded', timeout: 120000 } );
 	await page.waitForFunction( () => window.wp?.data?.select( 'core/block-editor' ), null, { timeout: 120000 } );
 	await page.evaluate( () => wp.data.dispatch( 'core/preferences' ).set( 'core/edit-post', 'welcomeGuide', false ) );
+	// A fresh site may still show the welcome modal; close it if it's there.
+	const close = page.locator( '.components-modal__screen-overlay button[aria-label="Close"]' );
+	await close.first().waitFor( { timeout: 3000 } ).then( () => close.first().click() ).catch( () => {} );
 };
 const ours = () => page.evaluate( () => {
 	const be = wp.data.select( 'core/block-editor' );
@@ -57,6 +60,27 @@ try {
 	await page.keyboard.type( '+44 (0)1234 567 890' );
 	const typed = await page.evaluate( () => wp.data.select( 'core/block-editor' ).getBlocks()[ 0 ].innerBlocks.map( ( b ) => b.attributes.value ) );
 	check( 'typing in the canvas sets the values', typed[ 0 ] === 'hello@example.com' && typed[ 1 ] === '+44 (0)1234 567 890', JSON.stringify( typed ) );
+
+	// 2b. Sidebar: no variation buttons under the block card; the Type dropdown switches the item.
+	await first.click();
+	await page.evaluate( () => wp.data.dispatch( 'core/edit-post' ).openGeneralSidebar( 'edit-post/block' ) );
+	await page.waitForTimeout( 500 );
+	check( 'no Email/Phone buttons under the block card', ( await page.locator( '.block-editor-block-variation-transforms' ).count() ) === 0 );
+	const typeSelect = page.locator( '.block-editor-block-inspector select' ).first();
+	const optionsTxt = await typeSelect.locator( 'option' ).allTextContents();
+	check( 'Type dropdown lists the types', JSON.stringify( optionsTxt ) === '["Email","Phone"]', JSON.stringify( optionsTxt ) );
+	await page.screenshot( { path: `${ OUT }/00-sidebar.png` } );
+	await page.locator( '.block-editor-block-card' ).screenshot( { path: `${ OUT }/00-block-card.png` } );
+	await typeSelect.selectOption( 'phone' );
+	const switched = await page.evaluate( () => wp.data.select( 'core/block-editor' ).getBlocks()[ 0 ].innerBlocks[ 0 ].attributes.type );
+	check( 'dropdown changes the type', switched === 'phone', switched );
+	await typeSelect.selectOption( 'email' );
+	// Block icons in the editor UI must not render as solid boxes (fill forced by core CSS).
+	const cardFill = await page.evaluate( () => {
+		const p = document.querySelector( '.block-editor-block-card svg path[fill-rule="evenodd"]' );
+		return p ? getComputedStyle( p ).fillRule : 'missing';
+	} );
+	check( 'block card icon is a filled frame (evenodd)', cardFill === 'evenodd', cardFill );
 
 	// 3. More rows: button style with display text, icon-only, and hostile input.
 	await page.evaluate( () => {
@@ -126,6 +150,11 @@ try {
 	check( 'label HTML is escaped', ! r4.html.includes( '<img' ) && r4.items[ 0 ].text === '<img src=x onerror=alert(1)>', r4.items[ 0 ].text );
 	check( 'no javascript: links', r4.items.every( ( i ) => /^(mailto|tel):/.test( i.href ) ), JSON.stringify( r4.items.map( ( i ) => i.href ) ) );
 	check( 'empty item outputs nothing', r4.items.length === 2, `${ r4.items.length } links` );
+	// Icons still draw when a theme forces svg fill/stroke.
+	await fp.addStyleTag( { content: 'svg { fill: none; stroke: red; }' } );
+	const iconPaint = await fp.evaluate( () => [ ...document.querySelectorAll( '.wfc-contact-item__icon' ) ].slice( 0, 2 ).map( ( s ) => getComputedStyle( s ).fill + ' / ' + getComputedStyle( s ).stroke ) );
+	check( 'front-end icons are filled with the text colour', iconPaint.every( ( p ) => p.startsWith( 'rgb' ) && p.endsWith( 'none' ) ), JSON.stringify( iconPaint ) );
+	await fp.reload( { waitUntil: 'load' } );
 
 	await fp.locator( '.wp-block-wp-free-charts-contact-details' ).first().screenshot( { path: `${ OUT }/02-front-row1.png` } );
 	await fp.evaluate( () => document.querySelector( '.wp-block-wp-free-charts-contact-details' ).parentElement.scrollIntoView() );

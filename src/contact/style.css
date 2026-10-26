@@ -12,6 +12,8 @@
 	flex: none;
 	width: 1.25em;
 	height: 1.25em;
+	fill: currentColor;
+	stroke: none;
 }
 
 /* Icon-only items: a slightly larger icon, with a comfortable tap target. */

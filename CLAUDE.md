@@ -155,13 +155,20 @@ the `react-jsx-runtime` script handle).
 - **Parent** (`contact-details`): `layout` support (flex, like core/buttons) gives side-by-side items,
   justification, wrap and gap. `showText` is passed to items as context `wp-free-charts/showText`
   (off = icons only, with an `aria-label` on each link).
-- **Item** (`contact-item`): `type` (email|phone), `value`, optional `label` (display text), stored as
+- **Types are a list, not variations.** `src/contact/types.js` (editor: label, icon, field label,
+  validation) and `$wfc_types` in `item/render.php` (front end: icon, protocol, link builder) hold the
+  types, matched by `name`. Add a type to both. The Type dropdown in the sidebar picks it. Don't
+  register block variations: they show as buttons under the block card, which the user didn't want.
+  `type` has no `enum`, so new types need no schema change; unknown types fall back to the first.
+- **Item** (`contact-item`): `type`, `value`, optional `label` (display text), stored as
   RichText HTML. The canvas text edits `label` when set, otherwise `value`. The `<a>` is the block wrapper,
   so colour/typography/padding/border supports land on it. Phone links keep digits and a leading `+`;
   emails go through `sanitize_email`; an empty or invalid value outputs nothing.
 - **Styles:** "Plain" (theme link look) and "Button" (adds `wp-element-button`, so theme.json button
   styles apply; a zero-specificity 9999px radius copies core/button's default).
 - **Icons** are in both `icons.js` (editor) and `item/render.php` (front end); keep them identical.
+  Draw them as **filled shapes, never stroke-only outlines**: the editor's block-icon CSS and many
+  themes force `fill: currentColor` on SVGs, which turns outlines into solid boxes.
 - Test: `tools/editor-test/contact.test.mjs <outDir>` (prints PASS/FAIL).
 
 ## Commands

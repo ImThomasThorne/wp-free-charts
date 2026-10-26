@@ -11,6 +11,9 @@ export default function Edit( { attributes: { showText }, setAttributes } ) {
 		allowedBlocks: [ ITEM ],
 		template: TEMPLATE,
 		templateInsertUpdatesSelection: true,
+		// "+" adds an item straight away; its type is then picked in the sidebar.
+		defaultBlock: [ ITEM, { type: 'email' } ],
+		directInsert: true,
 	} );
 
 	return (

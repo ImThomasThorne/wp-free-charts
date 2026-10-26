@@ -8,7 +8,7 @@
   "parent": [
     "wp-free-charts/contact-details"
   ],
-  "description": "An email address or phone number with an icon. Opens an email or starts a call when clicked.",
+  "description": "One contact detail with an icon, such as an email address or phone number. Choose the type in the sidebar.",
   "keywords": [
     "email",
     "phone",
@@ -24,10 +24,6 @@
   "attributes": {
     "type": {
       "type": "string",
-      "enum": [
-        "email",
-        "phone"
-      ],
       "default": "email"
     },
     "value": {

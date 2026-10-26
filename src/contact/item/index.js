@@ -1,37 +1,19 @@
 /**
  * Contact Item block (child of Contact Details). Rendered by render.php, so
- * save() is null. The Email / Phone variations show up in the inserter and in
- * the block switcher.
+ * save() is null. The kind of item (email, phone, …) is chosen with the Type
+ * dropdown in the sidebar; the list of kinds is in ../types.js.
  */
-import { __ } from '@wordpress/i18n';
 import { registerBlockType } from '@wordpress/blocks';
 import Edit from './edit';
-import { emailIcon, phoneIcon } from '../icons';
+import { emailIcon } from '../icons';
+import { getContactType } from '../types';
 import metadata from './block.json';
 
 registerBlockType( metadata.name, {
 	icon: emailIcon,
 	edit: Edit,
 	save: () => null,
-	variations: [
-		{
-			name: 'email',
-			title: __( 'Email', 'wp-free-charts' ),
-			description: __( 'An email address that opens a new email when clicked.', 'wp-free-charts' ),
-			icon: emailIcon,
-			attributes: { type: 'email' },
-			isDefault: true,
-			isActive: [ 'type' ],
-			scope: [ 'inserter', 'block', 'transform' ],
-		},
-		{
-			name: 'phone',
-			title: __( 'Phone', 'wp-free-charts' ),
-			description: __( 'A phone number that starts a call when clicked.', 'wp-free-charts' ),
-			icon: phoneIcon,
-			attributes: { type: 'phone' },
-			isActive: [ 'type' ],
-			scope: [ 'inserter', 'block', 'transform' ],
-		},
-	],
+	// List View shows "Email", "Phone", … instead of "Contact Item".
+	__experimentalLabel: ( attributes, { context } ) =>
+		context === 'list-view' ? getContactType( attributes.type ).label : undefined,
 } );
