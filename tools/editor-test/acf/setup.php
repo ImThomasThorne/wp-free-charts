@@ -34,6 +34,8 @@ $content = implode(
 				$item( array( 'type' => 'phone', 'source' => 'field', 'field' => 'office_phone', 'fieldFrom' => 'option' ) ),
 				$item( array( 'type' => 'phone', 'source' => 'field', 'field' => 'user_phone', 'fieldFrom' => 'author', 'label' => 'Call the author' ) ),
 				$item( array( 'source' => 'field', 'field' => 'plain_email' ) ),
+				$item( array( 'source' => 'field', 'field' => 'contact.email' ) ),
+				$item( array( 'type' => 'phone', 'source' => 'field', 'field' => 'contact.phone' ) ),
 			)
 		),
 		// Must all output nothing.
@@ -45,6 +47,7 @@ $content = implode(
 				$item( array( 'source' => 'field', 'field' => 'wfc_raw_user_meta', 'fieldFrom' => 'author' ) ),
 				$item( array( 'source' => 'field', 'field' => 'missing_field' ) ),
 				$item( array( 'source' => 'field', 'field' => '../etc' ) ),
+				$item( array( 'source' => 'field', 'field' => 'contact' ) ),
 			)
 		),
 		'<!-- wp:query {"queryId":7,"query":{"perPage":10,"pages":0,"offset":0,"postType":"post","order":"asc","orderBy":"title","search":"Staff member","inherit":false}} -->' .
@@ -65,5 +68,6 @@ $id = wp_insert_post(
 );
 update_field( 'field_staff_email', 'me@example.com', $id );
 update_field( 'field_staff_phone', '+44 20 7946 0000', $id );
+update_field( 'field_contact', array( 'field_contact_email' => 'group@example.com', 'field_contact_phone' => '01111 222333' ), $id );
 update_post_meta( $id, 'plain_email', 'plain@example.com' );
 update_post_meta( $id, '_secret_email', 'leak@example.com' );

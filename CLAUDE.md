@@ -23,6 +23,7 @@ the `react-jsx-runtime` script handle).
 | Path | Role |
 |---|---|
 | `wp-free-charts.php` | Plugin header (`Version`), update checker setup, `register_block_type( build/ )` |
+| `includes/` | Plain PHP shipped as-is (not built): `contact-fields.php` (custom-field lookup + REST preview route) |
 | `src/block.json` | Block metadata + **all attributes** (copied to `build/` on build) |
 | `src/index.js` | Registers the block (edit + save) |
 | `src/edit.js` | Editor UI: sidebar controls, live preview, modals |
@@ -165,9 +166,13 @@ the `react-jsx-runtime` script handle).
   so colour/typography/padding/border supports land on it. Phone links keep digits and a leading `+`;
   emails go through `sanitize_email`; an empty or invalid value outputs nothing.
 - **Custom fields:** `source: 'field'` + `field` (name) + `fieldFrom` (`post` | `option` | `author`) read
-  the detail at render time in `wp_free_charts_contact_field_value()` (item/render.php). `post` uses the
-  `postId` context, so it works per post inside a Query Loop. The editor shows "Field: name" instead of a
-  value. **Security:** Authors can add these blocks and output is public, so it only reads ACF fields
+  the detail at render time with `wp_free_charts_contact_resolve_field()` in **`includes/contact-fields.php`**
+  (plain PHP, required by wp-free-charts.php, not built). It returns the value or an error code
+  (`not_found`, `empty`, `not_text` + suggested sub-fields, `no_post`, …). Dots reach into Group/array
+  fields (`contact.email`). `post` uses the `postId` context, so it works per post inside a Query Loop.
+  The same file registers `GET /wp-free-charts/v1/contact-field` (needs `edit_posts` + `read_post`), which
+  `item/useFieldPreview.js` calls so the editor shows the real value or a plain-English reason
+  (`fieldProblem()` in item/edit.js). Values typed into the ACF box show after the post is saved. **Security:** Authors can add these blocks and output is public, so it only reads ACF fields
   (`get_field_object`) or, for `post` only, unprotected post meta. Never read raw `get_option` /
   `get_user_meta`, names starting with `_`, or non-scalar values. Test with `blueprint-acf.json`
   (installs ACF, loads `acf/fields.php` as an mu-plugin, runs `acf/setup.php`) and `contact-acf.test.mjs`.

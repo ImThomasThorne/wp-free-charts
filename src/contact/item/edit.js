@@ -4,6 +4,7 @@ import { PanelBody, SelectControl, TextControl, Notice } from '@wordpress/compon
 import { decodeEntities } from '@wordpress/html-entities';
 import { escapeHTML } from '@wordpress/escape-html';
 import { CONTACT_TYPES, getContactType } from '../types';
+import useFieldPreview from './useFieldPreview';
 
 /**
  * `value` and `label` are stored as RichText HTML (so "&" is "&amp;"). The
@@ -11,8 +12,51 @@ import { CONTACT_TYPES, getContactType } from '../types';
  */
 const toPlain = ( html ) => decodeEntities( String( html ?? '' ).replace( /<[^>]*>/g, '' ) );
 
-/** Field names render.php accepts (no leading "_": that's private meta). */
-const isValidFieldName = ( name ) => /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/.test( name );
+/**
+ * Field names the server accepts (no leading "_": that's private meta). Dots
+ * reach into Group fields: "contact.email".
+ */
+const isValidFieldName = ( name ) => /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}(\.[A-Za-z0-9_-]{1,64}){0,3}$/.test( name );
+
+const WHERE = {
+	post: __( 'this post', 'wp-free-charts' ),
+	option: __( 'the ACF Options page', 'wp-free-charts' ),
+	author: __( "the post author's profile", 'wp-free-charts' ),
+};
+
+/** Plain-English reason a field gave nothing (codes from includes/contact-fields.php). */
+function fieldProblem( preview, field, fieldFrom ) {
+	const where = WHERE[ fieldFrom ] ?? WHERE.post;
+	switch ( preview.error ) {
+		case 'no_post':
+			return __( "There's no post here to read the field from (for example, in a template). On the site, the post being viewed is used.", 'wp-free-charts' );
+		case 'no_author':
+			return __( "This post has no author, so there's no profile to read the field from.", 'wp-free-charts' );
+		case 'needs_acf':
+			return __( 'Options page and author fields need the Advanced Custom Fields plugin.', 'wp-free-charts' );
+		case 'not_found':
+			/* translators: 1: field name, 2: where the field was looked for. */
+			return sprintf( __( 'No field called "%1$s" was found on %2$s. Use the field name, not its label (ACF shows it under Field Name), check "Field belongs to", and make sure a value has been saved.', 'wp-free-charts' ), field, where );
+		case 'empty':
+			/* translators: 1: field name, 2: where the field was looked for. */
+			return sprintf( __( 'The field "%1$s" is empty on %2$s, so this item won\'t be shown.', 'wp-free-charts' ), field, where );
+		case 'not_text': {
+			const type = preview.field_type ? ` (${ preview.field_type })` : '';
+			const hint = preview.suggest?.length
+				/* translators: %s: list of field names. */
+				? ' ' + sprintf( __( 'Try one of: %s', 'wp-free-charts' ), preview.suggest.join( ', ' ) )
+				: '';
+			/* translators: 1: field name, 2: ACF field type in brackets. */
+			return sprintf( __( 'The field "%1$s"%2$s holds several values, not text.', 'wp-free-charts' ), field, type ) + hint;
+		}
+		case 'invalid_name':
+			return __( 'Field names can only use letters, numbers, "_" and "-", and can\'t start with "_". Use a dot for a field inside a Group, e.g. contact.email.', 'wp-free-charts' );
+		case 'request_failed':
+			return __( "Couldn't check the field.", 'wp-free-charts' ) + ( preview.message ? ` ${ preview.message }` : '' );
+		default:
+			return '';
+	}
+}
 
 const TYPE_OPTIONS = CONTACT_TYPES.map( ( t ) => ( { label: t.label, value: t.name } ) );
 
@@ -46,26 +90,35 @@ export default function Edit( { attributes, setAttributes, context } ) {
 	const plainLabel = toPlain( label );
 	const plainValue = toPlain( value );
 
+	const nameOk  = isValidFieldName( field );
+	const preview = useFieldPreview( fromField && nameOk, field, fieldFrom, context.postId );
+	const found   = preview?.value || '';
+
 	let warning = '';
 	if ( fromField ) {
-		if ( field && ! isValidFieldName( field ) ) {
-			warning = __( 'Field names can only use letters, numbers, "_" and "-", and can\'t start with "_".', 'wp-free-charts' );
+		if ( field && ! nameOk ) {
+			warning = fieldProblem( { error: 'invalid_name' }, field, fieldFrom );
+		} else if ( preview?.error ) {
+			warning = fieldProblem( preview, field, fieldFrom );
+		} else if ( found && ! type.isValid( found ) ) {
+			warning = type.invalidMessage;
 		}
 	} else if ( plainValue && ! type.isValid( plainValue ) ) {
 		warning = type.invalidMessage;
 	}
 
-	// What the block shows in the editor. Field values are only known on the
-	// front end, so a field shows its name (unless display text is set).
+	// What the block shows in the editor: for a field, the value it gives for
+	// this post (or its name while unknown), unless display text is set.
 	let text;
 	if ( fromField && ! plainLabel ) {
-		text = (
-			<span className="wfc-contact-item__text wfc-contact-item__field">
-				{ field
-					/* translators: %s: custom field name. */
-					? sprintf( __( 'Field: %s', 'wp-free-charts' ), field )
-					: __( 'Choose a field in the sidebar', 'wp-free-charts' ) }
-			</span>
+		let shown;
+		if ( ! field ) shown = __( 'Choose a field in the sidebar', 'wp-free-charts' );
+		/* translators: %s: custom field name. */
+		else if ( ! found ) shown = sprintf( __( 'Field: %s', 'wp-free-charts' ), field );
+		text = found ? (
+			<span className="wfc-contact-item__text">{ found }</span>
+		) : (
+			<span className="wfc-contact-item__text wfc-contact-item__field">{ shown }</span>
 		);
 	} else {
 		// Edits the display text when one is set, otherwise the typed-in detail.
@@ -111,7 +164,7 @@ export default function Edit( { attributes, setAttributes, context } ) {
 								__nextHasNoMarginBottom
 								__next40pxDefaultSize
 								label={ __( 'Field name', 'wp-free-charts' ) }
-								help={ __( 'The ACF field name (not its label), e.g. staff_email. Without ACF, a post meta key.', 'wp-free-charts' ) }
+								help={ __( 'The ACF field name (not its label), e.g. staff_email. For a field inside a Group, use group.field. Without ACF, a post meta key.', 'wp-free-charts' ) }
 								value={ field }
 								onChange={ ( next ) => setAttributes( { field: next.trim() } ) }
 							/>
@@ -124,6 +177,12 @@ export default function Edit( { attributes, setAttributes, context } ) {
 								options={ FIELD_FROM_OPTIONS }
 								onChange={ ( next ) => setAttributes( { fieldFrom: next } ) }
 							/>
+							{ found && (
+								<p className="wfc-contact-field-found">
+									{ /* translators: %s: the field's current value. */ }
+									{ sprintf( __( 'Found: %s', 'wp-free-charts' ), found ) }
+								</p>
+							) }
 						</>
 					) : (
 						<TextControl

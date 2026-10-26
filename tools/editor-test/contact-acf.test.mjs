@@ -39,6 +39,7 @@ try {
 	check( 'ACF Options page field', !! find( 'tel:08001234567' ) );
 	check( 'ACF field on the author, with display text', find( 'tel:07700900123' )?.text === 'Call the author' );
 	check( 'plain post meta (no ACF field)', !! find( 'mailto:plain@example.com' ) );
+	check( 'Group sub-fields (contact.email / contact.phone)', !! find( 'mailto:group@example.com' ) && !! find( 'tel:01111222333' ) );
 	check( 'protected meta, raw options and raw user meta stay hidden',
 		blocked.length === 0 && ! /leak@|raw-option@|raw-user@|admin@/.test( html ), JSON.stringify( blocked ) );
 	const loopEmails = loop.map( ( r ) => r[ 0 ]?.href );
@@ -60,11 +61,41 @@ try {
 	} );
 	check( 'blocks valid in the editor', valid );
 	const canvas = page.frameLocator( 'iframe[name="editor-canvas"]' );
-	const placeholder = await canvas.locator( '.wfc-contact-item__field' ).first().textContent();
-	check( 'editor shows the field name', placeholder === 'Field: staff_email', placeholder );
-	await canvas.locator( '.wp-block-wp-free-charts-contact-item' ).first().click();
-	await page.evaluate( () => wp.data.dispatch( 'core/edit-post' ).openGeneralSidebar( 'edit-post/block' ) );
-	await page.waitForTimeout( 500 );
+	// The editor shows the value each field gives (fetched from the server).
+	// Wait until the Query Loop items have loaded (Playground answers slowly).
+	await page.frameLocator( 'iframe[name="editor-canvas"]' ).locator( 'text=bob@example.com' ).first().waitFor( { timeout: 90000 } ).catch( () => {} );
+	const shown = await canvas.locator( '.wp-block-wp-free-charts-contact-item .wfc-contact-item__text' ).allTextContents();
+	log( 'editor texts:', JSON.stringify( shown ) );
+	check( 'editor shows the real field values', shown[ 0 ] === 'me@example.com' && shown[ 5 ] === 'group@example.com', `${ shown[ 0 ] } / ${ shown[ 5 ] }` );
+	check( 'Query Loop items in the editor show their own value', shown.includes( 'ann@example.com' ) && shown.includes( 'bob@example.com' ) );
+
+	// Select item n (in document order) and return the sidebar notice.
+	const noticeFor = async ( n ) => {
+		await page.evaluate( ( i ) => {
+			const be  = wp.data.select( 'core/block-editor' );
+			const ids = be.getClientIdsWithDescendants().filter( ( c ) => be.getBlockName( c ) === 'wp-free-charts/contact-item' );
+			wp.data.dispatch( 'core/block-editor' ).selectBlock( ids[ i ] );
+		}, n );
+		await page.evaluate( () => wp.data.dispatch( 'core/edit-post' ).openGeneralSidebar( 'edit-post/block' ) );
+		const notice = page.locator( '.block-editor-block-inspector .components-notice__content' );
+		await notice.first().waitFor( { timeout: 30000 } ).catch( () => {} );
+		return ( await notice.count() ) ? ( await notice.first().textContent() ) : '';
+	};
+	const missing = await noticeFor( 11 );
+	check( 'missing field explains why', missing.includes( 'No field called "missing_field"' ), missing );
+	const group = await noticeFor( 13 );
+	check( 'Group field suggests its sub-fields', group.includes( 'contact.email' ) && group.includes( 'contact.phone' ), group );
+	await page.screenshot( { path: `${ OUT }/03-editor-group-hint.png` } );
+	const priv = await noticeFor( 7 );
+	check( 'protected name is refused in the editor too', priv.includes( "can't start with" ), priv );
+
+	// The preview route is closed to visitors.
+	const anon = await browser.newContext();
+	const res  = await anon.request.get( `${ BASE }/wp-json/wp-free-charts/v1/contact-field?field=staff_email&post_id=${ id }` );
+	check( 'preview route needs a logged-in editor', res.status() === 401, String( res.status() ) );
+	await anon.close();
+
+	await noticeFor( 0 );
 	const selects = await page.locator( '.block-editor-block-inspector select' ).evaluateAll( ( s ) => s.map( ( x ) => x.value ) );
 	check( 'sidebar shows Type, Source and Field belongs to', JSON.stringify( selects ) === '["email","field","post"]', JSON.stringify( selects ) );
 	await page.screenshot( { path: `${ OUT }/02-editor.png` } );

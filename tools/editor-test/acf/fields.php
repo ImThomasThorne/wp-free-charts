@@ -13,7 +13,21 @@ add_action(
 			array(
 				'key'      => 'group_wfc_test_post',
 				'title'    => 'WFC test (post)',
-				'fields'   => array( $field( 'staff_email', 'email' ), $field( 'staff_phone' ) ),
+				'fields'   => array(
+					$field( 'staff_email', 'email' ),
+					$field( 'staff_phone' ),
+					// A Group: read as contact.email / contact.phone.
+					array(
+						'key'        => 'field_contact',
+						'name'       => 'contact',
+						'label'      => 'contact',
+						'type'       => 'group',
+						'sub_fields' => array(
+							array( 'key' => 'field_contact_email', 'name' => 'email', 'label' => 'email', 'type' => 'email' ),
+							array( 'key' => 'field_contact_phone', 'name' => 'phone', 'label' => 'phone', 'type' => 'text' ),
+						),
+					),
+				),
 				'location' => array( array( array( 'param' => 'post_type', 'operator' => '==', 'value' => 'post' ) ) ),
 			)
 		);
