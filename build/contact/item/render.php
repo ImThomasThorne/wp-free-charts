@@ -58,7 +58,7 @@ $wfc_label     = wp_free_charts_contact_plain( isset( $attributes['label'] ) ? $
 
 if ( isset( $attributes['source'] ) && 'field' === $attributes['source'] ) {
 	// Lookup rules (and why they're strict) are in includes/contact-fields.php.
-	$wfc_field = wp_free_charts_contact_resolve_field(
+	$wfc_field = wp_free_charts_contact_resolve_field_safe(
 		isset( $attributes['field'] ) ? (string) $attributes['field'] : '',
 		isset( $attributes['fieldFrom'] ) ? (string) $attributes['fieldFrom'] : 'post',
 		isset( $block->context['postId'] ) ? (int) $block->context['postId'] : (int) get_the_ID()

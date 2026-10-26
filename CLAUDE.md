@@ -170,9 +170,13 @@ the `react-jsx-runtime` script handle).
   (plain PHP, required by wp-free-charts.php, not built). It returns the value or an error code
   (`not_found`, `empty`, `not_text` + suggested sub-fields, `no_post`, …). Dots reach into Group/array
   fields (`contact.email`). `post` uses the `postId` context, so it works per post inside a Query Loop.
-  The same file registers `GET /wp-free-charts/v1/contact-field` (needs `edit_posts` + `read_post`), which
-  `item/useFieldPreview.js` calls so the editor shows the real value or a plain-English reason
-  (`fieldProblem()` in item/edit.js). Values typed into the ACF box show after the post is saved. **Security:** Authors can add these blocks and output is public, so it only reads ACF fields
+  render.php calls it through `wp_free_charts_contact_resolve_field_safe()`, which catches any `Throwable`
+  (logs it, returns `php_error`). Rendering runs inside the REST response when a post is saved, so an
+  uncaught error there shows as "Updating failed. The response is not a valid JSON response".
+  The same file registers `POST /wp-free-charts/v1/contact-fields` `{ lookups: [ { field, from, post_id } ] }`
+  (needs `edit_posts`; each post needs `read_post`, else `forbidden`). `item/useFieldPreview.js` **batches**
+  every item's lookup into one request (one-per-item bursts can trip shared hosts' concurrent-request
+  limits), so the editor shows the real value or a plain-English reason (`fieldProblem()` in item/edit.js). Values typed into the ACF box show after the post is saved. **Security:** Authors can add these blocks and output is public, so it only reads ACF fields
   (`get_field_object`) or, for `post` only, unprotected post meta. Never read raw `get_option` /
   `get_user_meta`, names starting with `_`, or non-scalar values. Test with `blueprint-acf.json`
   (installs ACF, loads `acf/fields.php` as an mu-plugin, runs `acf/setup.php`) and `contact-acf.test.mjs`.
@@ -182,6 +186,12 @@ the `react-jsx-runtime` script handle).
   Draw them as **filled shapes, never stroke-only outlines**: the editor's block-icon CSS and many
   themes force `fill: currentColor` on SVGs, which turns outlines into solid boxes.
 - Tests: `tools/editor-test/contact.test.mjs <outDir>` and `contact-acf.test.mjs <outDir>` (print PASS/FAIL).
+  `contact-save.test.mjs` saves posts and reports any non-JSON REST response; run it against
+  `blueprint-acf-debug.json` (WP_DEBUG_DISPLAY on, so PHP warnings land in responses), with `--php=7.4`
+  and the default PHP. That blueprint breaks Playground's auto-login, so the test logs in as admin/password.
+- Playground quirks: under bursts of parallel requests its SQLite layer sometimes returns empty 500s
+  (or "Cannot escape data without an active database connection") for *core* endpoints too; probe one
+  request at a time before blaming the plugin. With `--login`, anonymous POSTs get redirected into GETs.
 
 ## Commands
 

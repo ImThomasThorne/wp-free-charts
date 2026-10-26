@@ -123,29 +123,69 @@ function wp_free_charts_contact_resolve_field( $name, $from, $post_id ) {
 }
 
 /**
- * GET /wp-free-charts/v1/contact-field?field=…&from=…&post_id=…
- * Editor preview: the same lookup as the front end, for users who can edit
- * posts and read that post.
+ * wp_free_charts_contact_resolve_field(), but a PHP error (e.g. from another
+ * plugin's ACF field type) can't escape. Rendering runs while a post is saved
+ * (the REST response includes the rendered content), so an uncaught error
+ * here would make the editor say "Updating failed. The response is not a
+ * valid JSON response". Instead the item gets the 'php_error' code and the
+ * error is logged.
+ */
+function wp_free_charts_contact_resolve_field_safe( $name, $from, $post_id ) {
+	try {
+		return wp_free_charts_contact_resolve_field( $name, $from, $post_id );
+	} catch ( Throwable $e ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- report, don't break the page.
+		error_log( sprintf( 'WP Free Charts: reading contact field "%s" failed: %s in %s:%d', $name, $e->getMessage(), $e->getFile(), $e->getLine() ) );
+		return array( 'value' => '', 'error' => 'php_error', 'field_type' => '', 'suggest' => array(), 'message' => $e->getMessage() );
+	}
+}
+
+/**
+ * POST /wp-free-charts/v1/contact-fields  { lookups: [ { field, from, post_id }, … ] }
+ * Editor preview for every field item on the screen in one request (one
+ * request per item could trip shared hosts' limits on simultaneous requests).
+ * Same lookup as the front end. Needs edit_posts; each post must be readable
+ * by the user, otherwise that lookup returns 'forbidden'.
  */
 function wp_free_charts_contact_register_rest() {
 	register_rest_route(
 		'wp-free-charts/v1',
-		'/contact-field',
+		'/contact-fields',
 		array(
-			'methods'             => 'GET',
+			'methods'             => 'POST',
 			'callback'            => function ( WP_REST_Request $request ) {
-				return rest_ensure_response(
-					wp_free_charts_contact_resolve_field( $request['field'], $request['from'], $request['post_id'] )
-				);
+				$out = array();
+				foreach ( (array) $request['lookups'] as $lookup ) {
+					$post_id = isset( $lookup['post_id'] ) ? (int) $lookup['post_id'] : 0;
+					if ( $post_id && ! current_user_can( 'read_post', $post_id ) ) {
+						$out[] = array( 'value' => '', 'error' => 'forbidden', 'field_type' => '', 'suggest' => array() );
+						continue;
+					}
+					$out[] = wp_free_charts_contact_resolve_field_safe(
+						isset( $lookup['field'] ) ? (string) $lookup['field'] : '',
+						isset( $lookup['from'] ) ? (string) $lookup['from'] : 'post',
+						$post_id
+					);
+				}
+				return rest_ensure_response( $out );
 			},
-			'permission_callback' => function ( WP_REST_Request $request ) {
-				$post_id = (int) $request['post_id'];
-				return current_user_can( 'edit_posts' ) && ( ! $post_id || current_user_can( 'read_post', $post_id ) );
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
 			},
 			'args'                => array(
-				'field'   => array( 'type' => 'string', 'required' => true ),
-				'from'    => array( 'type' => 'string', 'enum' => array( 'post', 'option', 'author' ), 'default' => 'post' ),
-				'post_id' => array( 'type' => 'integer', 'default' => 0, 'minimum' => 0 ),
+				'lookups' => array(
+					'type'     => 'array',
+					'required' => true,
+					'maxItems' => 100,
+					'items'    => array(
+						'type'       => 'object',
+						'properties' => array(
+							'field'   => array( 'type' => 'string', 'required' => true ),
+							'from'    => array( 'type' => 'string', 'enum' => array( 'post', 'option', 'author' ) ),
+							'post_id' => array( 'type' => 'integer', 'minimum' => 0 ),
+						),
+					),
+				),
 			),
 		)
 	);

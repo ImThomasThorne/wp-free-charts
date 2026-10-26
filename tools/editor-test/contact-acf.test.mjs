@@ -91,8 +91,11 @@ try {
 
 	// The preview route is closed to visitors.
 	const anon = await browser.newContext();
-	const res  = await anon.request.get( `${ BASE }/wp-json/wp-free-charts/v1/contact-field?field=staff_email&post_id=${ id }` );
-	check( 'preview route needs a logged-in editor', res.status() === 401, String( res.status() ) );
+	// Playground's --login redirects visitors (turning the POST into a GET), so the
+	// status varies (401/404); what matters is that no field value comes back.
+	const res  = await anon.request.post( `${ BASE }/?rest_route=/wp-free-charts/v1/contact-fields`, { data: { lookups: [ { field: 'staff_email', from: 'post', post_id: Number( id ) } ] } } );
+	const body = await res.text();
+	check( 'preview route gives visitors nothing', res.status() >= 400 && ! body.includes( 'me@example.com' ), `${ res.status() } ${ body.slice( 0, 120 ) }` );
 	await anon.close();
 
 	await noticeFor( 0 );

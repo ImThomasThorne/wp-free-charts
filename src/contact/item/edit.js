@@ -51,6 +51,11 @@ function fieldProblem( preview, field, fieldFrom ) {
 		}
 		case 'invalid_name':
 			return __( 'Field names can only use letters, numbers, "_" and "-", and can\'t start with "_". Use a dot for a field inside a Group, e.g. contact.email.', 'wp-free-charts' );
+		case 'forbidden':
+			return __( "You don't have permission to read this post's fields.", 'wp-free-charts' );
+		case 'php_error':
+			/* translators: %s: PHP error message. */
+			return sprintf( __( 'Reading this field caused a PHP error, so the item is hidden: %s', 'wp-free-charts' ), preview.message || '' );
 		case 'request_failed':
 			return __( "Couldn't check the field.", 'wp-free-charts' ) + ( preview.message ? ` ${ preview.message }` : '' );
 		default:
