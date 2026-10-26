@@ -3,7 +3,7 @@
  * Plugin Name:       WP Free Charts
  * Plugin URI:        https://github.com/ImThomasThorne/wp-free-charts
  * Description:       Add interactive, customizable charts (pie, bar, line & more) and flexible tables (merge cells, colour cells/rows/columns, resizable columns, mobile-friendly layouts) to your WordPress site with Gutenberg blocks.
- * Version:           2.1.0
+ * Version:           2.2.0
  * Requires at least: 6.6
  * Requires PHP:      7.4
  * Author:
@@ -36,6 +36,7 @@ $wp_free_charts_update_checker->setBranch( 'main' );
  * changing src/.
  *  - build/       WP Free Charts (chart block)
  *  - build/table/ WP Free Table
+ *  - build/contact/ Contact Details, and build/contact/item/ its Contact Item children
  */
 function wp_free_charts_register_block() {
 	if ( ! function_exists( 'register_block_type' ) ) {
@@ -43,5 +44,7 @@ function wp_free_charts_register_block() {
 	}
 	register_block_type( WP_FREE_CHARTS_PATH . 'build' );
 	register_block_type( WP_FREE_CHARTS_PATH . 'build/table' );
+	register_block_type( WP_FREE_CHARTS_PATH . 'build/contact' );
+	register_block_type( WP_FREE_CHARTS_PATH . 'build/contact/item' );
 }
 add_action( 'init', 'wp_free_charts_register_block' );

@@ -6,6 +6,13 @@ bundled plugin-update-checker library.
   pie, doughnut, polarArea, radar, scatter) from spreadsheet-style data, with theme colours
   and optional front-end filter buttons.
 - `wp-free-charts/table` (src/table/ → build/table/): Word-style table. See "Table block" below.
+- `wp-free-charts/contact-details` + child `wp-free-charts/contact-item` (src/contact/ → build/contact/,
+  build/contact/item/): email/phone links with icons. See "Contact block" below.
+
+**Block names are permanent.** The `wp-free-charts/` namespace is stored in every post, so keep it
+even if the plugin is renamed (changing it orphans saved blocks). Renaming the plugin title,
+description or folder is fine; the update checker's repo URL and slug in the PHP file must match
+the GitHub repo.
 
 wp-scripts finds every `src/**/block.json`, so each block builds into the matching `build/`
 subfolder; `wp-free-charts.php` registers both. Requires WordPress 6.6+ (the build depends on
@@ -139,6 +146,23 @@ the `react-jsx-runtime` script handle).
   for existing cells (as `fontFamily` was).
 - The same **block-validation rule** as the chart applies: changing save.js output needs a `deprecated`
   entry in `src/table/index.js`.
+
+## Contact block (src/contact/)
+
+- **Dynamic blocks:** both are rendered by `render.php` (copied to build/ by wp-scripts). The parent's
+  save is `<InnerBlocks.Content />` and the item's is `null`, so markup changes never need deprecations.
+  They're dynamic because kses strips `<svg>` when users without `unfiltered_html` save static markup.
+- **Parent** (`contact-details`): `layout` support (flex, like core/buttons) gives side-by-side items,
+  justification, wrap and gap. `showText` is passed to items as context `wp-free-charts/showText`
+  (off = icons only, with an `aria-label` on each link).
+- **Item** (`contact-item`): `type` (email|phone), `value`, optional `label` (display text), stored as
+  RichText HTML. The canvas text edits `label` when set, otherwise `value`. The `<a>` is the block wrapper,
+  so colour/typography/padding/border supports land on it. Phone links keep digits and a leading `+`;
+  emails go through `sanitize_email`; an empty or invalid value outputs nothing.
+- **Styles:** "Plain" (theme link look) and "Button" (adds `wp-element-button`, so theme.json button
+  styles apply; a zero-specificity 9999px radius copies core/button's default).
+- **Icons** are in both `icons.js` (editor) and `item/render.php` (front end); keep them identical.
+- Test: `tools/editor-test/contact.test.mjs <outDir>` (prints PASS/FAIL).
 
 ## Commands
 

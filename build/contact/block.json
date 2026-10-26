@@ -1,0 +1,105 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "wp-free-charts/contact-details",
+  "version": "1.0.0",
+  "title": "Contact Details",
+  "category": "widgets",
+  "description": "Email addresses and phone numbers with icons. Clicking one opens an email or starts a call. Items sit side by side, like buttons.",
+  "keywords": [
+    "contact",
+    "email",
+    "phone",
+    "call",
+    "telephone",
+    "mail"
+  ],
+  "textdomain": "wp-free-charts",
+  "editorScript": "file:./index.js",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "attributes": {
+    "showText": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "providesContext": {
+    "wp-free-charts/showText": "showText"
+  },
+  "supports": {
+    "html": false,
+    "anchor": true,
+    "align": [
+      "wide",
+      "full"
+    ],
+    "layout": {
+      "allowSwitching": false,
+      "allowInheriting": false,
+      "default": {
+        "type": "flex"
+      }
+    },
+    "color": {
+      "background": true,
+      "text": true,
+      "link": true,
+      "gradients": true,
+      "__experimentalDefaultControls": {
+        "background": true,
+        "text": true
+      }
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalFontFamily": true,
+      "__experimentalFontWeight": true,
+      "__experimentalFontStyle": true,
+      "__experimentalTextTransform": true,
+      "__experimentalLetterSpacing": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true
+      }
+    },
+    "spacing": {
+      "blockGap": [
+        "horizontal",
+        "vertical"
+      ],
+      "margin": [
+        "top",
+        "bottom"
+      ],
+      "padding": true,
+      "__experimentalDefaultControls": {
+        "blockGap": true
+      }
+    },
+    "__experimentalBorder": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true
+    }
+  },
+  "example": {
+    "innerBlocks": [
+      {
+        "name": "wp-free-charts/contact-item",
+        "attributes": {
+          "type": "email",
+          "value": "hello@example.com"
+        }
+      },
+      {
+        "name": "wp-free-charts/contact-item",
+        "attributes": {
+          "type": "phone",
+          "value": "01234 567890"
+        }
+      }
+    ]
+  }
+}

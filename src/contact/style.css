@@ -1,0 +1,40 @@
+/* Contact Details + Contact Item (front end and editor). */
+
+.wp-block-wp-free-charts-contact-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5em;
+	box-sizing: border-box;
+	word-break: break-word;
+}
+
+.wp-block-wp-free-charts-contact-item .wfc-contact-item__icon {
+	flex: none;
+	width: 1.25em;
+	height: 1.25em;
+}
+
+/* Icon-only items: a slightly larger icon, with a comfortable tap target. */
+.wp-block-wp-free-charts-contact-item.is-icon-only {
+	min-width: 1.75em;
+	min-height: 1.75em;
+	justify-content: center;
+}
+
+.wp-block-wp-free-charts-contact-item.is-icon-only .wfc-contact-item__icon {
+	width: 1.5em;
+	height: 1.5em;
+}
+
+/* Button style: the theme's button look comes from .wp-element-button.
+   Keep the icon and text on one line inside the button. */
+.wp-block-wp-free-charts-contact-item.is-style-button {
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+/* Same rounded default as core Button blocks. :where() keeps it at zero
+   specificity, so a theme's button radius or the Border > Radius setting wins. */
+:where(.wp-block-wp-free-charts-contact-item.is-style-button) {
+	border-radius: 9999px;
+}

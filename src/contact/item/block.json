@@ -1,0 +1,57 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "wp-free-charts/contact-item",
+  "version": "1.0.0",
+  "title": "Contact Item",
+  "category": "widgets",
+  "parent": [ "wp-free-charts/contact-details" ],
+  "description": "An email address or phone number with an icon. Opens an email or starts a call when clicked.",
+  "keywords": [ "email", "phone", "call", "mail" ],
+  "textdomain": "wp-free-charts",
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php",
+  "usesContext": [ "wp-free-charts/showText" ],
+  "attributes": {
+    "type":  { "type": "string", "enum": [ "email", "phone" ], "default": "email" },
+    "value": { "type": "string", "default": "" },
+    "label": { "type": "string", "default": "" }
+  },
+  "styles": [
+    { "name": "plain", "label": "Plain", "isDefault": true },
+    { "name": "button", "label": "Button" }
+  ],
+  "supports": {
+    "html": false,
+    "reusable": false,
+    "color": {
+      "background": true,
+      "text": true,
+      "gradients": true,
+      "__experimentalDefaultControls": { "background": true, "text": true }
+    },
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "__experimentalFontFamily": true,
+      "__experimentalFontWeight": true,
+      "__experimentalFontStyle": true,
+      "__experimentalTextTransform": true,
+      "__experimentalTextDecoration": true,
+      "__experimentalLetterSpacing": true,
+      "__experimentalDefaultControls": { "fontSize": true }
+    },
+    "spacing": {
+      "padding": true,
+      "__experimentalDefaultControls": { "padding": true }
+    },
+    "__experimentalBorder": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true,
+      "__experimentalDefaultControls": { "radius": true }
+    },
+    "shadow": true
+  }
+}
