@@ -2,16 +2,16 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "wp-free-charts/contact-item",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Contact Item",
   "category": "widgets",
   "parent": [ "wp-free-charts/contact-details" ],
-  "description": "One contact detail with an icon, such as an email address or phone number. Choose the type in the sidebar.",
-  "keywords": [ "email", "phone", "call", "mail" ],
+  "description": "One contact detail or social profile with an icon. Choose the type in the sidebar; style all items from the Contact Details block.",
+  "keywords": [ "email", "phone", "call", "mail", "social", "website" ],
   "textdomain": "wp-free-charts",
   "editorScript": "file:./index.js",
   "render": "file:./render.php",
-  "usesContext": [ "wp-free-charts/showText", "postId", "postType" ],
+  "usesContext": [ "wp-free-charts/showText", "wp-free-charts/itemStyle", "wp-free-charts/openInNewTab", "postId", "postType" ],
   "attributes": {
     "type":      { "type": "string", "default": "email" },
     "value":     { "type": "string", "default": "" },
@@ -20,41 +20,8 @@
     "field":     { "type": "string", "default": "" },
     "fieldFrom": { "type": "string", "default": "post" }
   },
-  "styles": [
-    { "name": "plain", "label": "Plain", "isDefault": true },
-    { "name": "button", "label": "Button" }
-  ],
   "supports": {
     "html": false,
-    "reusable": false,
-    "color": {
-      "background": true,
-      "text": true,
-      "gradients": true,
-      "__experimentalDefaultControls": { "background": true, "text": true }
-    },
-    "typography": {
-      "fontSize": true,
-      "lineHeight": true,
-      "__experimentalFontFamily": true,
-      "__experimentalFontWeight": true,
-      "__experimentalFontStyle": true,
-      "__experimentalTextTransform": true,
-      "__experimentalTextDecoration": true,
-      "__experimentalLetterSpacing": true,
-      "__experimentalDefaultControls": { "fontSize": true }
-    },
-    "spacing": {
-      "padding": true,
-      "__experimentalDefaultControls": { "padding": true }
-    },
-    "__experimentalBorder": {
-      "color": true,
-      "radius": true,
-      "style": true,
-      "width": true,
-      "__experimentalDefaultControls": { "radius": true }
-    },
-    "shadow": true
+    "reusable": false
   }
 }

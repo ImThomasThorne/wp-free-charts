@@ -3,7 +3,7 @@ import { useBlockProps, RichText, InspectorControls } from '@wordpress/block-edi
 import { PanelBody, SelectControl, TextControl, Notice } from '@wordpress/components';
 import { decodeEntities } from '@wordpress/html-entities';
 import { escapeHTML } from '@wordpress/escape-html';
-import { CONTACT_TYPES, getContactType } from '../types';
+import { CONTACT_TYPES, TYPE_GROUPS, getContactType, defaultText } from '../types';
 import useFieldPreview from './useFieldPreview';
 
 /**
@@ -63,7 +63,6 @@ function fieldProblem( preview, field, fieldFrom ) {
 	}
 }
 
-const TYPE_OPTIONS = CONTACT_TYPES.map( ( t ) => ( { label: t.label, value: t.name } ) );
 
 const SOURCE_OPTIONS = [
 	{ label: __( 'Typed in', 'wp-free-charts' ), value: 'manual' },
@@ -81,7 +80,14 @@ export default function Edit( { attributes, setAttributes, context } ) {
 	const type      = getContactType( attributes.type );
 	const fromField = attributes.source === 'field';
 	const showText  = context[ 'wp-free-charts/showText' ] !== false;
-	const isButton  = ( className || '' ).split( /\s+/ ).includes( 'is-style-button' );
+	// Styling is set on the parent. "Button" items get the theme's button class.
+	// (is-style-button is the old per-item style from before 2.7, as in render.php.)
+	const itemStyle = context[ 'wp-free-charts/itemStyle' ] || 'plain';
+	const isButton  = itemStyle === 'button' || ( itemStyle === 'plain' && ( className || '' ).split( /\s+/ ).includes( 'is-style-button' ) );
+
+	const plainLabel = toPlain( label );
+	const plainValue = toPlain( value );
+	const isWebLink  = type.kind === 'url';
 
 	const blockProps = useBlockProps( {
 		className: [
@@ -89,11 +95,9 @@ export default function Edit( { attributes, setAttributes, context } ) {
 			isButton && 'wp-element-button',
 			! showText && 'is-icon-only',
 			fromField && 'is-from-field',
+			! fromField && ! plainValue && 'is-empty',
 		].filter( Boolean ).join( ' ' ),
 	} );
-
-	const plainLabel = toPlain( label );
-	const plainValue = toPlain( value );
 
 	const nameOk  = isValidFieldName( field );
 	const preview = useFieldPreview( fromField && nameOk, field, fieldFrom, context.postId );
@@ -112,8 +116,12 @@ export default function Edit( { attributes, setAttributes, context } ) {
 		warning = type.invalidMessage;
 	}
 
-	// What the block shows in the editor: for a field, the value it gives for
-	// this post (or its name while unknown), unless display text is set.
+	// What the block shows in the editor (matches the front end):
+	//  - a field with no display text: the text its value gives for this post
+	//    (or "Field: name" while unknown);
+	//  - website/social: the display text, with the default (network name or
+	//    address) as placeholder; the URL itself is set in the sidebar;
+	//  - email/phone/WhatsApp: the display text if set, otherwise the detail itself.
 	let text;
 	if ( fromField && ! plainLabel ) {
 		let shown;
@@ -121,21 +129,21 @@ export default function Edit( { attributes, setAttributes, context } ) {
 		/* translators: %s: custom field name. */
 		else if ( ! found ) shown = sprintf( __( 'Field: %s', 'wp-free-charts' ), field );
 		text = found ? (
-			<span className="wfc-contact-item__text">{ found }</span>
+			<span className="wfc-contact-item__text">{ defaultText( type, found ) }</span>
 		) : (
 			<span className="wfc-contact-item__text wfc-contact-item__field">{ shown }</span>
 		);
 	} else {
-		// Edits the display text when one is set, otherwise the typed-in detail.
-		const editsLabel = !! plainLabel || fromField;
+		const editsLabel = !! plainLabel || fromField || isWebLink;
 		text = (
 			<RichText
 				identifier={ editsLabel ? 'label' : 'value' }
 				tagName="span"
-				className="wfc-contact-item__text"
+				// For web links the placeholder IS the text the site shows, so it's not faded.
+				className={ isWebLink ? 'wfc-contact-item__text is-default-text' : 'wfc-contact-item__text' }
 				value={ editsLabel ? label : value }
 				onChange={ ( next ) => setAttributes( editsLabel ? { label: next } : { value: next } ) }
-				placeholder={ type.fieldLabel }
+				placeholder={ isWebLink ? defaultText( type, plainValue ) || type.label : type.fieldLabel }
 				allowedFormats={ [] }
 				withoutInteractiveFormatting
 				disableLineBreaks
@@ -152,9 +160,16 @@ export default function Edit( { attributes, setAttributes, context } ) {
 						__next40pxDefaultSize
 						label={ __( 'Type', 'wp-free-charts' ) }
 						value={ type.name }
-						options={ TYPE_OPTIONS }
 						onChange={ ( next ) => setAttributes( { type: next } ) }
-					/>
+					>
+						{ TYPE_GROUPS.map( ( g ) => (
+							<optgroup key={ g.group } label={ g.label }>
+								{ CONTACT_TYPES.filter( ( t ) => t.group === g.group ).map( ( t ) => (
+									<option key={ t.name } value={ t.name }>{ t.label }</option>
+								) ) }
+							</optgroup>
+						) ) }
+					</SelectControl>
 					<SelectControl
 						__nextHasNoMarginBottom
 						__next40pxDefaultSize
@@ -206,7 +221,10 @@ export default function Edit( { attributes, setAttributes, context } ) {
 						__nextHasNoMarginBottom
 						__next40pxDefaultSize
 						label={ __( 'Display text', 'wp-free-charts' ) }
-						help={ __( 'Optional, e.g. "Call the office". Leave empty to show the contact detail.', 'wp-free-charts' ) }
+						help={ type.group === 'social'
+							/* translators: %s: social network name, e.g. Instagram. */
+							? sprintf( __( 'Optional, e.g. "Follow us". Leave empty to show "%s".', 'wp-free-charts' ), type.label )
+							: __( 'Optional, e.g. "Call the office". Leave empty to show the contact detail.', 'wp-free-charts' ) }
 						value={ plainLabel }
 						onChange={ ( next ) => setAttributes( { label: escapeHTML( next ) } ) }
 					/>

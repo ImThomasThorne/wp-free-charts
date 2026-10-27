@@ -68,7 +68,14 @@ try {
 	check( 'no Email/Phone buttons under the block card', ( await page.locator( '.block-editor-block-variation-transforms' ).count() ) === 0 );
 	const typeSelect = page.locator( '.block-editor-block-inspector select' ).first();
 	const optionsTxt = await typeSelect.locator( 'option' ).allTextContents();
-	check( 'Type dropdown lists the types', JSON.stringify( optionsTxt ) === '["Email","Phone"]', JSON.stringify( optionsTxt ) );
+	const groupsTxt  = await typeSelect.locator( 'optgroup' ).evaluateAll( ( g ) => g.map( ( x ) => x.label ) );
+	check( 'Type dropdown lists contact + social types in groups',
+		optionsTxt.length === 16 && [ 'Email', 'Phone', 'WhatsApp', 'Website', 'Instagram', 'LinkedIn' ].every( ( t ) => optionsTxt.includes( t ) ) && JSON.stringify( groupsTxt ) === '["Contact","Social"]',
+		JSON.stringify( { optionsTxt, groupsTxt } ) );
+	check( 'items have no styling options of their own', await page.evaluate( () => {
+		const s = wp.blocks.getBlockType( 'wp-free-charts/contact-item' ).supports;
+		return ! s.color && ! s.typography && ! s.spacing && ! s.__experimentalBorder && ! ( wp.data.select( 'core/blocks' ).getBlockStyles( 'wp-free-charts/contact-item' ) || [] ).length;
+	} ) );
 	await page.screenshot( { path: `${ OUT }/00-sidebar.png` } );
 	await page.locator( '.block-editor-block-card' ).screenshot( { path: `${ OUT }/00-block-card.png` } );
 	await typeSelect.selectOption( 'phone' );
@@ -82,14 +89,15 @@ try {
 	} );
 	check( 'block card icon is a filled frame (evenodd)', cardFill === 'evenodd', cardFill );
 
-	// 3. More rows: button style with display text, icon-only, and hostile input.
+	// 3. More rows: button style (set on the parent) with display text, icon-only,
+	// hostile input, social links, full parent styling, an old per-item button, hostile CSS.
 	await page.evaluate( () => {
 		const { createBlock } = wp.blocks;
 		const item = ( a ) => createBlock( 'wp-free-charts/contact-item', a );
 		wp.data.dispatch( 'core/block-editor' ).insertBlocks( [
-			createBlock( 'wp-free-charts/contact-details', {}, [
-				item( { type: 'email', value: 'sales@example.com', label: 'Email sales', className: 'is-style-button' } ),
-				item( { type: 'phone', value: '01234 567890', label: 'Call us', className: 'is-style-button' } ),
+			createBlock( 'wp-free-charts/contact-details', { itemStyle: 'button' }, [
+				item( { type: 'email', value: 'sales@example.com', label: 'Email sales' } ),
+				item( { type: 'phone', value: '01234 567890', label: 'Call us' } ),
 			] ),
 			createBlock( 'wp-free-charts/contact-details', { showText: false }, [
 				item( { type: 'email', value: 'hello@example.com' } ),
@@ -100,16 +108,78 @@ try {
 				item( { type: 'phone', value: 'javascript:alert(1)' } ),
 				item( { type: 'email', value: '' } ),
 			] ),
+			createBlock( 'wp-free-charts/contact-details', { openInNewTab: true }, [
+				item( { type: 'instagram', value: 'instagram.com/example' } ),
+				item( { type: 'website', value: 'https://www.example.com/' } ),
+				item( { type: 'whatsapp', value: '+44 7700 900123' } ),
+				item( { type: 'x', value: 'https://x.com/example' } ),
+				item( { type: 'linkedin', value: 'https://www.linkedin.com/in/example', label: 'Connect' } ),
+				item( { type: 'youtube', value: 'not a url' } ),
+			] ),
+			createBlock( 'wp-free-charts/contact-details', {
+				itemStyle: 'outline', iconPosition: 'top', itemColor: '#0000ff',
+				itemBackground: '#ffffff', itemBackgroundSlug: 'base',
+				itemPadding: { top: '10px', right: '20px', bottom: '10px', left: '20px' }, itemRadius: '4px',
+				iconSize: '32px', iconShape: 'circle', iconBackground: '#00ff00', iconColor: '#ff0000',
+			}, [
+				item( { type: 'email', value: 'style@example.com' } ),
+				item( { type: 'facebook', value: 'https://facebook.com/example' } ),
+			] ),
+			createBlock( 'wp-free-charts/contact-details', {}, [
+				item( { type: 'email', value: 'legacy@example.com', className: 'is-style-button' } ),
+			] ),
+			createBlock( 'wp-free-charts/contact-details', {
+				iconSize: 'red;background:url(x)', itemColor: 'expression(alert(1))', itemRadius: '4px;color:red',
+				iconColorSlug: 'x);background:url(evil', itemBorderStyle: 'solid;color:red',
+			}, [
+				item( { type: 'email', value: 'css@example.com' } ),
+			] ),
 		] );
 	} );
 	await page.waitForTimeout( 800 );
-	await page.screenshot( { path: `${ OUT }/01-editor.png` } );
+	await page.screenshot( { path: `${ OUT }/01-editor.png`, fullPage: true } );
 
 	// Icon-only in the editor hides the text.
 	const iconOnlyText = await canvas().locator( '.wp-block-wp-free-charts-contact-details' ).nth( 2 ).locator( '.wfc-contact-item__text' ).count();
 	check( 'icon-only row has no text in the editor', iconOnlyText === 0 );
-	const btnClass = await canvas().locator( '.wp-block-wp-free-charts-contact-item.is-style-button' ).first().getAttribute( 'class' );
-	check( 'button style gets wp-element-button in the editor', btnClass.includes( 'wp-element-button' ), btnClass );
+	const btnClass = await canvas().locator( '.wp-block-wp-free-charts-contact-details' ).nth( 1 ).locator( '.wp-block-wp-free-charts-contact-item' ).first().getAttribute( 'class' );
+	check( 'parent Button style gives items wp-element-button in the editor', btnClass.includes( 'wp-element-button' ), btnClass );
+
+	// The parent's Styles tab has the item/icon controls.
+	await page.evaluate( () => {
+		const be = wp.data.select( 'core/block-editor' );
+		wp.data.dispatch( 'core/block-editor' ).selectBlock( be.getBlocks()[ 5 ].clientId );
+	} );
+	await page.waitForTimeout( 500 );
+	await page.locator( '.block-editor-block-inspector [role="tab"][aria-label="Styles"]' ).first().click().catch( () => {} );
+	await page.waitForTimeout( 700 );
+	// innerText follows CSS text-transform (control labels are upper case), so compare lower case.
+	const stylesText = ( await page.locator( '.block-editor-block-inspector' ).innerText() ).toLowerCase();
+	const missing    = [ 'Items', 'Icons', 'Icon size', 'Background shape', 'Corner radius', 'Icon background', 'Item text on hover' ].filter( ( t ) => ! stylesText.includes( t.toLowerCase() ) );
+	check( 'parent Styles tab has item + icon controls', missing.length === 0, `missing: ${ missing.join( ', ' ) } | ${ stylesText.replace( /\s+/g, ' ' ).slice( -600 ) }` );
+	await page.screenshot( { path: `${ OUT }/01b-parent-styles.png` } );
+
+	// Same look in the editor and on the site: measure the styled row in both.
+	const measure = () => {
+		const row = document.querySelectorAll( '.wp-block-wp-free-charts-contact-details' )[ 5 ];
+		const a   = row.querySelector( '.wp-block-wp-free-charts-contact-item' );
+		const s   = getComputedStyle( a );
+		const i   = getComputedStyle( a.querySelector( 'svg' ) );
+		return {
+			color: s.color, padding: s.padding, border: `${ s.borderTopWidth } ${ s.borderTopStyle }`, radius: s.borderTopLeftRadius,
+			dir: s.flexDirection, iconW: i.width, iconBg: i.backgroundColor, iconFill: i.fill, iconRadius: i.borderTopLeftRadius,
+		};
+	};
+	const editorLook = await page.frame( { name: 'editor-canvas' } ).evaluate( measure );
+	// A social item's default text ("Instagram") is a placeholder in the editor; it shouldn't look faded.
+	const phOpacity = await page.frame( { name: 'editor-canvas' } ).evaluate( () => {
+		const ph = document.querySelector( '.is-default-text [data-rich-text-placeholder]' );
+		return ph ? getComputedStyle( ph, '::after' ).opacity : 'none';
+	} );
+	check( 'social default text is not faded in the editor', phOpacity === '1', phOpacity );
+	const editorHostile = await page.frame( { name: 'editor-canvas' } ).evaluate( () =>
+		document.querySelectorAll( '.wp-block-wp-free-charts-contact-details' )[ 7 ].getAttribute( 'style' ) || '' );
+	check( 'editor drops hostile CSS values too', ! /url\(|expression|color:\s*red|red;/.test( editorHostile ), editorHostile );
 
 	// 4. Publish, reload, still valid.
 	await page.evaluate( () => wp.data.dispatch( 'core/editor' ).editPost( { status: 'publish' } ) );
@@ -120,7 +190,7 @@ try {
 	await openEditor( `${ BASE }/wp-admin/post.php?post=${ id }&action=edit` );
 	await page.waitForFunction( () => wp.data.select( 'core/block-editor' ).getBlocks().length > 0, null, { timeout: 120000 } );
 	const blocks = await ours();
-	check( 'all contact blocks valid after reload', blocks.length === 13 && blocks.every( ( b ) => b.valid ), `${ blocks.length } blocks` );
+	check( 'all contact blocks valid after reload', blocks.length === 27 && blocks.every( ( b ) => b.valid ), `${ blocks.length } blocks` );
 
 	// 5. Front end.
 	const fp = await context.newPage();
@@ -133,13 +203,41 @@ try {
 			text: a.textContent.trim(),
 			aria: a.getAttribute( 'aria-label' ),
 			cls: a.className,
-			svg: !! a.querySelector( 'svg' ),
+			svg: a.querySelectorAll( 'svg path' ).length,
+			target: a.getAttribute( 'target' ),
+			rel: a.getAttribute( 'rel' ),
+			sr: a.querySelector( '.wfc-sr-only' )?.textContent || '',
+			visibleText: a.querySelector( '.wfc-contact-item__text' )?.textContent || '',
 			top: Math.round( a.getBoundingClientRect().top ),
 		} ) ),
+		style: row.getAttribute( 'style' ) || '',
 		html: row.innerHTML,
 	} ) ) );
 	fs.writeFileSync( `${ OUT }/front.json`, JSON.stringify( rows, null, 2 ) );
-	const [ r1, r2, r3, r4 ] = rows;
+	const [ r1, r2, r3, r4, r5, r6, r7, r8 ] = rows;
+
+	// Social / web links (new tab on).
+	const by = ( r, href ) => r.items.find( ( i ) => i.href === href );
+	const insta = by( r5, 'https://instagram.com/example' );
+	check( 'social link: https added, network name shown, icon drawn', insta?.visibleText === 'Instagram' && insta.svg > 0, JSON.stringify( insta ) );
+	check( 'new tab: target, rel and screen-reader note', insta?.target === '_blank' && /noopener/.test( insta.rel ) && insta.sr === '(opens in a new tab)' );
+	check( 'website shows the address without https://', by( r5, 'https://www.example.com/' )?.visibleText === 'www.example.com' );
+	check( 'WhatsApp links to wa.me with digits only', by( r5, 'https://wa.me/447700900123' )?.visibleText === '+44 7700 900123' );
+	check( 'X and LinkedIn (display text) links', by( r5, 'https://x.com/example' )?.visibleText === 'X' && by( r5, 'https://www.linkedin.com/in/example' )?.visibleText === 'Connect' );
+	check( 'invalid social URL outputs nothing', r5.items.length === 5, `${ r5.items.length } links` );
+	check( 'email/phone never open in a new tab', [ ...r1.items, ...r2.items ].every( ( i ) => ! i.target ) );
+
+	// Parent styling: same look as the editor, theme colour kept as a preset var.
+	const frontLook = await fp.evaluate( measure );
+	log( 'styled row editor:', JSON.stringify( editorLook ) );
+	log( 'styled row front: ', JSON.stringify( frontLook ) );
+	check( 'parent styling applies to items', frontLook.color === 'rgb(0, 0, 255)' && frontLook.padding === '10px 20px' && frontLook.border === '2px solid' &&
+		frontLook.radius === '4px' && frontLook.dir === 'column' && frontLook.iconW === '32px' && frontLook.iconBg === 'rgb(0, 255, 0)' &&
+		frontLook.iconFill === 'rgb(255, 0, 0)' && frontLook.iconRadius === '50%', JSON.stringify( frontLook ) );
+	check( 'editor and site look the same', JSON.stringify( editorLook ) === JSON.stringify( frontLook ) );
+	check( 'theme colour stays linked (preset var)', r6.style.includes( '--wfc-item-bg:var(--wp--preset--color--base)' ), r6.style );
+	check( 'old per-item Button style still works', r7.items[ 0 ].cls.includes( 'wp-element-button' ) );
+	check( 'hostile CSS values are dropped', ! /url\(|expression|color:red|red;/.test( r8.style ), r8.style );
 	check( 'rows use flex layout', rows.every( ( r ) => r.display === 'flex' && r.cls.includes( 'is-layout-flex' ) ) );
 	check( 'items sit side by side', r1.items[ 0 ].top === r1.items[ 1 ].top, JSON.stringify( r1.items.map( ( i ) => i.top ) ) );
 	check( 'email link', r1.items[ 0 ].href === 'mailto:hello@example.com' && r1.items[ 0 ].text === 'hello@example.com' && r1.items[ 0 ].svg );

@@ -7,7 +7,7 @@ bundled plugin-update-checker library.
   and optional front-end filter buttons.
 - `wp-free-charts/table` (src/table/ → build/table/): Word-style table. See "Table block" below.
 - `wp-free-charts/contact-details` + child `wp-free-charts/contact-item` (src/contact/ → build/contact/,
-  build/contact/item/): email/phone links with icons. See "Contact block" below.
+  build/contact/item/): email, phone, WhatsApp, website and social links with icons. See "Contact block" below.
 
 **Block names are permanent.** The `wp-free-charts/` namespace is stored in every post, so keep it
 even if the plugin is renamed (changing it orphans saved blocks). Renaming the plugin title,
@@ -23,7 +23,7 @@ the `react-jsx-runtime` script handle).
 | Path | Role |
 |---|---|
 | `wp-free-charts.php` | Plugin header (`Version`), update checker setup, `register_block_type( build/ )` |
-| `includes/` | Plain PHP shipped as-is (not built): `contact-fields.php` (custom-field lookup + REST preview route) |
+| `includes/` | Plain PHP/JSON shipped as-is (not built): `contact-fields.php` (custom-field lookup + REST preview route), `contact-types.php` (item types: links), `contact-styles.php` (parent styling → classes/CSS vars), `contact-icons.json` (icons for editor + front end) |
 | `src/block.json` | Block metadata + **all attributes** (copied to `build/` on build) |
 | `src/index.js` | Registers the block (edit + save) |
 | `src/edit.js` | Editor UI: sidebar controls, live preview, modals |
@@ -154,17 +154,33 @@ the `react-jsx-runtime` script handle).
   save is `<InnerBlocks.Content />` and the item's is `null`, so markup changes never need deprecations.
   They're dynamic because kses strips `<svg>` when users without `unfiltered_html` save static markup.
 - **Parent** (`contact-details`): `layout` support (flex, like core/buttons) gives side-by-side items,
-  justification, wrap and gap. `showText` is passed to items as context `wp-free-charts/showText`
-  (off = icons only, with an `aria-label` on each link).
-- **Types are a list, not variations.** `src/contact/types.js` (editor: label, icon, field label,
-  validation) and `$wfc_types` in `item/render.php` (front end: icon, protocol, link builder) hold the
-  types, matched by `name`. Add a type to both. The Type dropdown in the sidebar picks it. Don't
-  register block variations: they show as buttons under the block card, which the user didn't want.
-  `type` has no `enum`, so new types need no schema change; unknown types fall back to the first.
-- **Item** (`contact-item`): `type`, `value`, optional `label` (display text), stored as
-  RichText HTML. The canvas text edits `label` when set, otherwise `value`. The `<a>` is the block wrapper,
-  so colour/typography/padding/border supports land on it. Phone links keep digits and a leading `+`;
-  emails go through `sanitize_email`; an empty or invalid value outputs nothing.
+  justification, wrap and gap. Context to items: `wp-free-charts/showText` (off = icons only, with an
+  `aria-label` on each link), `wp-free-charts/itemStyle`, `wp-free-charts/openInNewTab` (web links only).
+- **All styling is on the parent, not the items** (the user wants every item consistent). Items have no
+  color/typography/spacing/border supports and no block styles. Parent attributes (`itemStyle` plain|button|outline,
+  `iconPosition`, `itemGap`, `itemPadding`, item border/radius/underline, item colours + hover, `iconSize`,
+  `iconShape`, `iconPadding`, icon colour/background; colours stored as value + `…Slug`) become classes
+  (`is-item-style-*`, `has-item-color`, `has-icon-shape-*`, …) + CSS vars (`--wfc-item-*`, `--wfc-icon-*`) on
+  the wrapper via `src/contact/styles.js` (editor) and `includes/contact-styles.php` (front end). **Keep those
+  two in step**; both validate values (lengths, colours, slugs, enums) so nothing else reaches the style
+  attribute. `style.css` applies them; a `has-…` class only appears when set, so unset settings leave theme
+  styles alone, and rule order matters (user settings come after the Outline/Button defaults).
+  Controls: colours in the Styles tab's Color panel (`InspectorControls group="color"` +
+  `ColorGradientSettingsDropdown`, PanelColorSettings fallback), "Items"/"Icons" panels in `group="styles"`.
+  Native typography/spacing/border supports on the parent style the container (fonts inherit to items).
+  `contact.test.mjs` measures a styled item in the editor and on the site and requires they match.
+- **Types are a list, not variations.** `src/contact/types.js` (editor: label, group contact|social, kind,
+  field label, validation, `defaultText()`) and `wp_free_charts_contact_types()` / `wp_free_charts_contact_link()`
+  in `includes/contact-types.php` (front end), matched by `name`. Kinds: email (mailto), phone (tel),
+  whatsapp (https://wa.me/digits), url (website + social; https:// added if missing, needs a dotted host).
+  Default text with no display text: the detail for email/phone/WhatsApp, the address without https:// for
+  website, the network name for social. Add a type to both files plus an icon. The Type dropdown (optgroups)
+  picks it. Don't register block variations: they show as buttons under the block card, which the user
+  didn't want. `type` has no `enum`; unknown types fall back to email.
+- **Item** (`contact-item`): `type`, `value`, optional `label` (display text), stored as RichText HTML.
+  The canvas edits `label` when set (and always for web links, whose default text is the placeholder,
+  shown unfaded), otherwise `value`. The `<a>` is the block wrapper. Items saved before 2.7 with the old
+  per-item `is-style-button` class still get `wp-element-button` when the parent style is Plain.
 - **Custom fields:** `source: 'field'` + `field` (name) + `fieldFrom` (`post` | `option` | `author`) read
   the detail at render time with `wp_free_charts_contact_resolve_field()` in **`includes/contact-fields.php`**
   (plain PHP, required by wp-free-charts.php, not built). It returns the value or an error code
@@ -180,11 +196,14 @@ the `react-jsx-runtime` script handle).
   (`get_field_object`) or, for `post` only, unprotected post meta. Never read raw `get_option` /
   `get_user_meta`, names starting with `_`, or non-scalar values. Test with `blueprint-acf.json`
   (installs ACF, loads `acf/fields.php` as an mu-plugin, runs `acf/setup.php`) and `contact-acf.test.mjs`.
-- **Styles:** "Plain" (theme link look) and "Button" (adds `wp-element-button`, so theme.json button
-  styles apply; a zero-specificity 9999px radius copies core/button's default).
-- **Icons** are in both `icons.js` (editor) and `item/render.php` (front end); keep them identical.
-  Draw them as **filled shapes, never stroke-only outlines**: the editor's block-icon CSS and many
-  themes force `fill: currentColor` on SVGs, which turns outlines into solid boxes.
+- **Item styles:** "Plain" (theme link look), "Button" (adds `wp-element-button`, so theme.json button
+  styles apply; a zero-specificity 9999px radius copies core/button's default), "Outline" (2px currentColor border).
+- **Icons** live once in `includes/contact-icons.json` (24×24 path lists, `evenodd` flag), read by
+  `src/contact/icons.js` (imported JSON) and `wp_free_charts_contact_icon()`. Brand logos are from Simple
+  Icons (CC0); LinkedIn isn't in Simple Icons any more, so it and email/phone/website are drawn here.
+  Use **filled shapes, never stroke-only outlines**: the editor's block-icon CSS and many themes force
+  `fill: currentColor` on SVGs, which turns outlines into solid boxes. The icon background is padding +
+  background on the `<svg>` itself (`box-sizing: content-box`), so no extra markup.
 - Tests: `tools/editor-test/contact.test.mjs <outDir>` and `contact-acf.test.mjs <outDir>` (print PASS/FAIL).
   `contact-save.test.mjs` saves posts and reports any non-JSON REST response; run it against
   `blueprint-acf-debug.json` (WP_DEBUG_DISPLAY on, so PHP warnings land in responses), with `--php=7.4`

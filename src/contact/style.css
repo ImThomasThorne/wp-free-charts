@@ -1,22 +1,46 @@
-/* Contact Details + Contact Item (front end and editor). */
+/*
+ * Contact Details + Contact Item (front end and editor).
+ *
+ * All item/icon styling is set on the Contact Details block and arrives as
+ * classes + CSS custom properties on its wrapper (src/contact/styles.js and
+ * includes/contact-styles.php). A "has-…" class is only present when that
+ * setting is used, so unset settings leave the theme's own styles alone.
+ *
+ * Order matters below: rules with equal specificity later in the file win,
+ * so the user's settings come after the Outline/Button defaults.
+ */
+
+/* ── Item basics ─────────────────────────────────────────────── */
 
 .wp-block-wp-free-charts-contact-item {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.5em;
+	gap: var(--wfc-item-gap, 0.5em);
 	box-sizing: border-box;
 	word-break: break-word;
 }
 
+.wp-block-wp-free-charts-contact-details.is-icon-after .wp-block-wp-free-charts-contact-item {
+	flex-direction: row-reverse;
+}
+
+.wp-block-wp-free-charts-contact-details.is-icon-top .wp-block-wp-free-charts-contact-item {
+	flex-direction: column;
+	text-align: center;
+}
+
+/* ── Icons ───────────────────────────────────────────────────── */
+
 .wp-block-wp-free-charts-contact-item .wfc-contact-item__icon {
 	flex: none;
-	width: 1.25em;
-	height: 1.25em;
+	box-sizing: content-box;
+	width: var(--wfc-icon-size, 1.25em);
+	height: var(--wfc-icon-size, 1.25em);
 	fill: currentColor;
 	stroke: none;
 }
 
-/* Icon-only items: a slightly larger icon, with a comfortable tap target. */
+/* Icon-only items: a slightly larger icon by default, and a comfortable tap target. */
 .wp-block-wp-free-charts-contact-item.is-icon-only {
 	min-width: 1.75em;
 	min-height: 1.75em;
@@ -24,25 +48,126 @@
 }
 
 .wp-block-wp-free-charts-contact-item.is-icon-only .wfc-contact-item__icon {
-	width: 1.5em;
-	height: 1.5em;
+	width: var(--wfc-icon-size, 1.5em);
+	height: var(--wfc-icon-size, 1.5em);
 }
 
-/* Editor only: the "Field: name" placeholder for items read from a custom field. */
-.wp-block-wp-free-charts-contact-item .wfc-contact-item__field {
-	font-style: italic;
-	opacity: 0.75;
+.wp-block-wp-free-charts-contact-details.has-icon-color .wfc-contact-item__icon {
+	color: var(--wfc-icon-color);
 }
 
-/* Button style: the theme's button look comes from .wp-element-button.
-   Keep the icon and text on one line inside the button. */
-.wp-block-wp-free-charts-contact-item.is-style-button {
+/* Background around the icon: a shape, or an icon background colour on its
+   own (which gets a circle). Default fill is a light tint of the icon colour. */
+.wp-block-wp-free-charts-contact-details[class*="has-icon-shape-"] .wfc-contact-item__icon,
+.wp-block-wp-free-charts-contact-details.has-icon-bg .wfc-contact-item__icon {
+	padding: var(--wfc-icon-padding, 0.4em);
+	background-color: var(--wfc-icon-bg, color-mix(in srgb, currentColor 14%, transparent));
+	border-radius: 50%;
+}
+
+.wp-block-wp-free-charts-contact-details.has-icon-shape-rounded .wfc-contact-item__icon {
+	border-radius: 25%;
+}
+
+.wp-block-wp-free-charts-contact-details.has-icon-shape-square .wfc-contact-item__icon {
+	border-radius: 0;
+}
+
+/* ── Item styles: Plain (theme link), Button (theme button), Outline ── */
+
+/* Button: the theme's button look comes from .wp-element-button. */
+.wp-block-wp-free-charts-contact-item.wp-element-button {
 	text-decoration: none;
 	white-space: nowrap;
 }
 
 /* Same rounded default as core Button blocks. :where() keeps it at zero
-   specificity, so a theme's button radius or the Border > Radius setting wins. */
-:where(.wp-block-wp-free-charts-contact-item.is-style-button) {
+   specificity, so a theme's button radius (or Corner radius below) wins. */
+:where(.wp-block-wp-free-charts-contact-item.wp-element-button) {
 	border-radius: 9999px;
+}
+
+.wp-block-wp-free-charts-contact-details.is-item-style-outline .wp-block-wp-free-charts-contact-item {
+	padding: 0.6em 1.2em;
+	border: 2px solid currentColor;
+	border-radius: 9999px;
+	text-decoration: none;
+	white-space: nowrap;
+}
+
+/* A plain item with a background colour needs a little room. */
+.wp-block-wp-free-charts-contact-details.is-item-style-plain.has-item-bg .wp-block-wp-free-charts-contact-item {
+	padding: 0.4em 0.8em;
+	border-radius: 0.25em;
+}
+
+/* ── User settings (after the defaults above, so they win) ───── */
+
+.wp-block-wp-free-charts-contact-details.has-item-color .wp-block-wp-free-charts-contact-item {
+	color: var(--wfc-item-color);
+}
+
+.wp-block-wp-free-charts-contact-details.has-item-bg .wp-block-wp-free-charts-contact-item {
+	background: var(--wfc-item-bg);
+}
+
+.wp-block-wp-free-charts-contact-details.has-item-hover-color .wp-block-wp-free-charts-contact-item:hover,
+.wp-block-wp-free-charts-contact-details.has-item-hover-color .wp-block-wp-free-charts-contact-item:focus-visible {
+	color: var(--wfc-item-hover-color);
+}
+
+.wp-block-wp-free-charts-contact-details.has-item-hover-bg .wp-block-wp-free-charts-contact-item:hover,
+.wp-block-wp-free-charts-contact-details.has-item-hover-bg .wp-block-wp-free-charts-contact-item:focus-visible {
+	background: var(--wfc-item-hover-bg);
+}
+
+.wp-block-wp-free-charts-contact-details.has-item-border .wp-block-wp-free-charts-contact-item {
+	border-width: var(--wfc-item-border-width, 1px);
+	border-style: var(--wfc-item-border-style, solid);
+	border-color: var(--wfc-item-border-color, currentColor);
+}
+
+.wp-block-wp-free-charts-contact-details.has-item-radius .wp-block-wp-free-charts-contact-item {
+	border-radius: var(--wfc-item-radius);
+}
+
+.wp-block-wp-free-charts-contact-details.has-item-padding .wp-block-wp-free-charts-contact-item {
+	padding: var(--wfc-item-padding);
+}
+
+.wp-block-wp-free-charts-contact-details.has-item-decoration .wp-block-wp-free-charts-contact-item,
+.wp-block-wp-free-charts-contact-details.has-item-decoration .wfc-contact-item__text {
+	text-decoration: var(--wfc-item-decoration);
+}
+
+/* ── Misc ────────────────────────────────────────────────────── */
+
+/* "(opens in a new tab)" for screen readers only. */
+.wp-block-wp-free-charts-contact-item .wfc-sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Editor only: the "Field: name" placeholder, and items with no detail yet
+   (they output nothing on the site). */
+.wp-block-wp-free-charts-contact-item .wfc-contact-item__field {
+	font-style: italic;
+	opacity: 0.75;
+}
+
+.wp-block-wp-free-charts-contact-item.is-empty {
+	opacity: 0.55;
+}
+
+/* Editor only: a website/social item with no display text shows its default
+   text (e.g. "Instagram") as the placeholder; show it as the site will. */
+.wp-block-wp-free-charts-contact-item .is-default-text [data-rich-text-placeholder]::after {
+	opacity: 1;
 }

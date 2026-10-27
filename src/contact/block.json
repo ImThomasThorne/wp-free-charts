@@ -2,20 +2,48 @@
   "$schema": "https://schemas.wp.org/trunk/block.json",
   "apiVersion": 3,
   "name": "wp-free-charts/contact-details",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "title": "Contact Details",
   "category": "widgets",
-  "description": "Email addresses and phone numbers with icons. Clicking one opens an email or starts a call. Items sit side by side, like buttons.",
-  "keywords": [ "contact", "email", "phone", "call", "telephone", "mail" ],
+  "description": "Email, phone, website and social media links with icons, side by side like buttons. Style every item from here.",
+  "keywords": [ "contact", "email", "phone", "call", "social", "facebook", "instagram", "whatsapp", "links", "icons" ],
   "textdomain": "wp-free-charts",
   "editorScript": "file:./index.js",
   "style": "file:./style-index.css",
   "render": "file:./render.php",
   "attributes": {
-    "showText": { "type": "boolean", "default": true }
+    "showText":     { "type": "boolean", "default": true },
+    "openInNewTab": { "type": "boolean", "default": false },
+    "itemStyle":    { "type": "string",  "default": "plain" },
+    "iconPosition": { "type": "string",  "default": "before" },
+    "itemGap":      { "type": "string",  "default": "" },
+    "itemPadding":  { "type": "object",  "default": {} },
+    "itemBorderWidth": { "type": "string", "default": "" },
+    "itemBorderStyle": { "type": "string", "default": "" },
+    "itemRadius":      { "type": "string", "default": "" },
+    "itemDecoration":  { "type": "string", "default": "" },
+    "itemColor":               { "type": "string", "default": "" },
+    "itemColorSlug":           { "type": "string", "default": "" },
+    "itemBackground":          { "type": "string", "default": "" },
+    "itemBackgroundSlug":      { "type": "string", "default": "" },
+    "itemHoverColor":          { "type": "string", "default": "" },
+    "itemHoverColorSlug":      { "type": "string", "default": "" },
+    "itemHoverBackground":     { "type": "string", "default": "" },
+    "itemHoverBackgroundSlug": { "type": "string", "default": "" },
+    "itemBorderColor":         { "type": "string", "default": "" },
+    "itemBorderColorSlug":     { "type": "string", "default": "" },
+    "iconSize":    { "type": "string", "default": "" },
+    "iconShape":   { "type": "string", "default": "none" },
+    "iconPadding": { "type": "string", "default": "" },
+    "iconColor":              { "type": "string", "default": "" },
+    "iconColorSlug":          { "type": "string", "default": "" },
+    "iconBackground":         { "type": "string", "default": "" },
+    "iconBackgroundSlug":     { "type": "string", "default": "" }
   },
   "providesContext": {
-    "wp-free-charts/showText": "showText"
+    "wp-free-charts/showText": "showText",
+    "wp-free-charts/itemStyle": "itemStyle",
+    "wp-free-charts/openInNewTab": "openInNewTab"
   },
   "supports": {
     "html": false,
@@ -28,10 +56,9 @@
     },
     "color": {
       "background": true,
-      "text": true,
-      "link": true,
-      "gradients": true,
-      "__experimentalDefaultControls": { "background": true, "text": true }
+      "text": false,
+      "link": false,
+      "gradients": true
     },
     "typography": {
       "fontSize": true,
@@ -41,7 +68,7 @@
       "__experimentalFontStyle": true,
       "__experimentalTextTransform": true,
       "__experimentalLetterSpacing": true,
-      "__experimentalDefaultControls": { "fontSize": true }
+      "__experimentalDefaultControls": { "fontSize": true, "fontFamily": true, "fontAppearance": true }
     },
     "spacing": {
       "blockGap": [ "horizontal", "vertical" ],
@@ -54,12 +81,15 @@
       "radius": true,
       "style": true,
       "width": true
-    }
+    },
+    "shadow": true
   },
   "example": {
+    "attributes": { "itemStyle": "button" },
     "innerBlocks": [
       { "name": "wp-free-charts/contact-item", "attributes": { "type": "email", "value": "hello@example.com" } },
-      { "name": "wp-free-charts/contact-item", "attributes": { "type": "phone", "value": "01234 567890" } }
+      { "name": "wp-free-charts/contact-item", "attributes": { "type": "phone", "value": "01234 567890" } },
+      { "name": "wp-free-charts/contact-item", "attributes": { "type": "instagram", "value": "https://instagram.com/example" } }
     ]
   }
 }
