@@ -31,45 +31,68 @@
 
 /* ── Icons ───────────────────────────────────────────────────── */
 
-.wp-block-wp-free-charts-contact-item .wfc-contact-item__icon {
-	flex: none;
-	box-sizing: content-box;
-	width: var(--wfc-icon-size, 1.25em);
-	height: var(--wfc-icon-size, 1.25em);
-	fill: currentColor;
-	stroke: none;
+/* --_wfc-icon: the icon's size (setting, else 1.25em; 1.5em for icon-only items). */
+.wp-block-wp-free-charts-contact-item {
+	--_wfc-icon: var(--wfc-icon-size, 1.25em);
 }
 
-/* Icon-only items: a slightly larger icon by default, and a comfortable tap target. */
 .wp-block-wp-free-charts-contact-item.is-icon-only {
+	--_wfc-icon: var(--wfc-icon-size, 1.5em);
+	/* A comfortable tap target. */
 	min-width: 1.75em;
 	min-height: 1.75em;
 	justify-content: center;
 }
 
-.wp-block-wp-free-charts-contact-item.is-icon-only .wfc-contact-item__icon {
-	width: var(--wfc-icon-size, 1.5em);
-	height: var(--wfc-icon-size, 1.5em);
+/* The wrapper holds the icon and draws its background shape. */
+.wp-block-wp-free-charts-contact-item .wfc-contact-item__icon-wrap {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	box-sizing: content-box;
+	line-height: 0;
 }
 
-.wp-block-wp-free-charts-contact-details.has-icon-color .wfc-contact-item__icon {
+.wp-block-wp-free-charts-contact-item .wfc-contact-item__icon {
+	display: block;
+	flex: none;
+	width: var(--_wfc-icon);
+	height: var(--_wfc-icon);
+	overflow: visible;
+	fill: currentColor;
+	stroke: none;
+}
+
+/* Set on the wrapper, so the default background tint below follows it too. */
+.wp-block-wp-free-charts-contact-details.has-icon-color .wfc-contact-item__icon-wrap {
 	color: var(--wfc-icon-color);
 }
 
-/* Background around the icon: a shape, or an icon background colour on its
-   own (which gets a circle). Default fill is a light tint of the icon colour. */
-.wp-block-wp-free-charts-contact-details[class*="has-icon-shape-"] .wfc-contact-item__icon,
-.wp-block-wp-free-charts-contact-details.has-icon-bg .wfc-contact-item__icon {
-	padding: var(--wfc-icon-padding, 0.4em);
+/*
+ * Background around the icon: a shape, or an icon background colour on its
+ * own (which gets a circle). Default fill is a light tint of the icon colour.
+ * It's on the wrapper, never the <svg>: a rounded <svg> clips its own content,
+ * which cut the corners off square logos (Instagram, LinkedIn).
+ *
+ * Space around the icon defaults to 30% of the icon size. A circle needs at
+ * least ~21% for a square icon's corners to stay inside it (√2/2 − 1/2), a
+ * 25%-rounded square ~9%, so smaller "Space around icon" values are raised to that.
+ */
+.wp-block-wp-free-charts-contact-details[class*="has-icon-shape-"] .wfc-contact-item__icon-wrap,
+.wp-block-wp-free-charts-contact-details.has-icon-bg .wfc-contact-item__icon-wrap {
+	padding: max(var(--wfc-icon-padding, calc(var(--_wfc-icon) * 0.3)), calc(var(--_wfc-icon) * 0.22));
 	background-color: var(--wfc-icon-bg, color-mix(in srgb, currentColor 14%, transparent));
 	border-radius: 50%;
 }
 
-.wp-block-wp-free-charts-contact-details.has-icon-shape-rounded .wfc-contact-item__icon {
+.wp-block-wp-free-charts-contact-details.has-icon-shape-rounded .wfc-contact-item__icon-wrap {
+	padding: max(var(--wfc-icon-padding, calc(var(--_wfc-icon) * 0.3)), calc(var(--_wfc-icon) * 0.1));
 	border-radius: 25%;
 }
 
-.wp-block-wp-free-charts-contact-details.has-icon-shape-square .wfc-contact-item__icon {
+.wp-block-wp-free-charts-contact-details.has-icon-shape-square .wfc-contact-item__icon-wrap {
+	padding: var(--wfc-icon-padding, calc(var(--_wfc-icon) * 0.3));
 	border-radius: 0;
 }
 

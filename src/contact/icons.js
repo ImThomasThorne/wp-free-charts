@@ -17,8 +17,8 @@ const svgProps = {
 	focusable: false,
 };
 
-/** The icon for a type name (unknown names get the email icon). */
-export function getIcon( name ) {
+/** The bare <svg> for a type name (unknown names get the email icon). */
+export function getSvg( name ) {
 	const paths = ( name && name[ 0 ] !== '_' && ICON_DATA[ name ] ) || ICON_DATA.email;
 	return (
 		<svg { ...svgProps } className="wfc-contact-item__icon">
@@ -27,7 +27,17 @@ export function getIcon( name ) {
 	);
 }
 
-export const emailIcon = getIcon( 'email' );
+/**
+ * The icon as shown in an item: the <svg> inside a wrapper that carries the
+ * background shape (circle etc.). The shape must not be on the <svg> itself:
+ * browsers clip an <svg>'s content to its own rounded corners, which cut the
+ * corners off square logos. Same markup as wp_free_charts_contact_icon().
+ */
+export function getIcon( name ) {
+	return <span className="wfc-contact-item__icon-wrap" aria-hidden="true">{ getSvg( name ) }</span>;
+}
+
+export const emailIcon = getSvg( 'email' );
 
 // Rounded frame for the card icon below.
 const FRAME = 'M5 4h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3zm0 2a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1z';

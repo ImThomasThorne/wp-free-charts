@@ -123,5 +123,9 @@ function wp_free_charts_contact_icon( $type ) {
 			esc_attr( isset( $path['d'] ) ? $path['d'] : '' )
 		);
 	}
-	return '<svg class="wfc-contact-item__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true" focusable="false">' . $inner . '</svg>';
+	// The wrapper carries the background shape; on the <svg> itself a rounded
+	// shape would clip the icon's corners. Same markup as getIcon() in src/contact/icons.js.
+	return '<span class="wfc-contact-item__icon-wrap" aria-hidden="true">'
+		. '<svg class="wfc-contact-item__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true" focusable="false">' . $inner . '</svg>'
+		. '</span>';
 }

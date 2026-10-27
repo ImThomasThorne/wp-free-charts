@@ -202,8 +202,12 @@ the `react-jsx-runtime` script handle).
   `src/contact/icons.js` (imported JSON) and `wp_free_charts_contact_icon()`. Brand logos are from Simple
   Icons (CC0); LinkedIn isn't in Simple Icons any more, so it and email/phone/website are drawn here.
   Use **filled shapes, never stroke-only outlines**: the editor's block-icon CSS and many themes force
-  `fill: currentColor` on SVGs, which turns outlines into solid boxes. The icon background is padding +
-  background on the `<svg>` itself (`box-sizing: content-box`), so no extra markup.
+  `fill: currentColor` on SVGs, which turns outlines into solid boxes. Markup is
+  `<span.wfc-contact-item__icon-wrap><svg.wfc-contact-item__icon/></span>` (`getIcon()` / `wp_free_charts_contact_icon()`).
+  **The background shape goes on the wrapper, never the `<svg>`:** browsers clip a replaced element's content to
+  its own rounded corners, which cut the corners off square logos (Instagram, LinkedIn). The wrapper's padding
+  defaults to 30% of the icon size and is raised to at least 22% for circles / 10% for rounded, so a square
+  icon's corners always fit inside the shape; `contact.test.mjs` checks the corner geometry.
 - Tests: `tools/editor-test/contact.test.mjs <outDir>` and `contact-acf.test.mjs <outDir>` (print PASS/FAIL).
   `contact-save.test.mjs` saves posts and reports any non-JSON REST response; run it against
   `blueprint-acf-debug.json` (WP_DEBUG_DISPLAY on, so PHP warnings land in responses), with `--php=7.4`

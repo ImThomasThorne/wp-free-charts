@@ -128,6 +128,15 @@ try {
 			createBlock( 'wp-free-charts/contact-details', {}, [
 				item( { type: 'email', value: 'legacy@example.com', className: 'is-style-button' } ),
 			] ),
+			createBlock( 'wp-free-charts/contact-details', { iconShape: 'circle', iconSize: '48px', iconPadding: '1px', showText: false }, [
+				item( { type: 'instagram', value: 'https://instagram.com/example' } ),
+				item( { type: 'linkedin', value: 'https://linkedin.com/in/example' } ),
+				item( { type: 'facebook', value: 'https://facebook.com/example' } ),
+			] ),
+			createBlock( 'wp-free-charts/contact-details', { iconShape: 'rounded', iconSize: '48px', iconPadding: '1px', showText: false }, [
+				item( { type: 'instagram', value: 'https://instagram.com/example' } ),
+				item( { type: 'linkedin', value: 'https://linkedin.com/in/example' } ),
+			] ),
 			createBlock( 'wp-free-charts/contact-details', {
 				iconSize: 'red;background:url(x)', itemColor: 'expression(alert(1))', itemRadius: '4px;color:red',
 				iconColorSlug: 'x);background:url(evil', itemBorderStyle: 'solid;color:red',
@@ -165,12 +174,37 @@ try {
 		const a   = row.querySelector( '.wp-block-wp-free-charts-contact-item' );
 		const s   = getComputedStyle( a );
 		const i   = getComputedStyle( a.querySelector( 'svg' ) );
+		const w   = getComputedStyle( a.querySelector( '.wfc-contact-item__icon-wrap' ) );
 		return {
 			color: s.color, padding: s.padding, border: `${ s.borderTopWidth } ${ s.borderTopStyle }`, radius: s.borderTopLeftRadius,
-			dir: s.flexDirection, iconW: i.width, iconBg: i.backgroundColor, iconFill: i.fill, iconRadius: i.borderTopLeftRadius,
+			dir: s.flexDirection, iconW: i.width, iconBg: w.backgroundColor, iconFill: i.fill, iconRadius: w.borderTopLeftRadius,
 		};
 	};
 	const editorLook = await page.frame( { name: 'editor-canvas' } ).evaluate( measure );
+
+	// Icons inside a circle / rounded background keep their corners: the <svg>
+	// isn't clipped, and each corner of the (square) icon sits inside the shape,
+	// even with a tiny "Space around icon" (1px on a 48px icon).
+	const iconsFit = () => [ 7, 8 ].flatMap( ( n ) => {
+		const row = document.querySelectorAll( '.wp-block-wp-free-charts-contact-details' )[ n ];
+		return [ ...row.querySelectorAll( '.wfc-contact-item__icon-wrap' ) ].map( ( wrap ) => {
+			const svg = wrap.querySelector( 'svg' );
+			const W   = wrap.getBoundingClientRect();
+			const S   = svg.getBoundingClientRect();
+			const r   = n === 7 ? W.width / 2 : W.width * 0.25; // circle / 25% rounded
+			const corners = [ [ S.left, S.top ], [ S.right, S.top ], [ S.left, S.bottom ], [ S.right, S.bottom ] ];
+			const inside  = corners.every( ( [ x, y ] ) => {
+				// Nearest rounded-corner centre; a point outside the corner zones is inside the box.
+				const cx = Math.min( Math.max( x, W.left + r ), W.right - r );
+				const cy = Math.min( Math.max( y, W.top + r ), W.bottom - r );
+				return Math.hypot( x - cx, y - cy ) <= r + 0.5;
+			} );
+			return { row: n, svgRadius: getComputedStyle( svg ).borderTopLeftRadius, svgW: Math.round( S.width ), wrapW: Math.round( W.width ), inside };
+		} );
+	} );
+	const fitEditor = await page.frame( { name: 'editor-canvas' } ).evaluate( iconsFit );
+	check( 'editor: icons in circle/rounded backgrounds are not cut off',
+		fitEditor.length === 5 && fitEditor.every( ( f ) => f.inside && f.svgRadius === '0px' && f.svgW === 48 ), JSON.stringify( fitEditor ) );
 	// A social item's default text ("Instagram") is a placeholder in the editor; it shouldn't look faded.
 	const phOpacity = await page.frame( { name: 'editor-canvas' } ).evaluate( () => {
 		const ph = document.querySelector( '.is-default-text [data-rich-text-placeholder]' );
@@ -178,7 +212,7 @@ try {
 	} );
 	check( 'social default text is not faded in the editor', phOpacity === '1', phOpacity );
 	const editorHostile = await page.frame( { name: 'editor-canvas' } ).evaluate( () =>
-		document.querySelectorAll( '.wp-block-wp-free-charts-contact-details' )[ 7 ].getAttribute( 'style' ) || '' );
+		document.querySelectorAll( '.wp-block-wp-free-charts-contact-details' )[ 9 ].getAttribute( 'style' ) || '' );
 	check( 'editor drops hostile CSS values too', ! /url\(|expression|color:\s*red|red;/.test( editorHostile ), editorHostile );
 
 	// 4. Publish, reload, still valid.
@@ -190,7 +224,7 @@ try {
 	await openEditor( `${ BASE }/wp-admin/post.php?post=${ id }&action=edit` );
 	await page.waitForFunction( () => wp.data.select( 'core/block-editor' ).getBlocks().length > 0, null, { timeout: 120000 } );
 	const blocks = await ours();
-	check( 'all contact blocks valid after reload', blocks.length === 27 && blocks.every( ( b ) => b.valid ), `${ blocks.length } blocks` );
+	check( 'all contact blocks valid after reload', blocks.length === 34 && blocks.every( ( b ) => b.valid ), `${ blocks.length } blocks` );
 
 	// 5. Front end.
 	const fp = await context.newPage();
@@ -214,7 +248,8 @@ try {
 		html: row.innerHTML,
 	} ) ) );
 	fs.writeFileSync( `${ OUT }/front.json`, JSON.stringify( rows, null, 2 ) );
-	const [ r1, r2, r3, r4, r5, r6, r7, r8 ] = rows;
+	const [ r1, r2, r3, r4, r5, r6, r7 ] = rows;
+	const r8 = rows[ 9 ];
 
 	// Social / web links (new tab on).
 	const by = ( r, href ) => r.items.find( ( i ) => i.href === href );
@@ -235,6 +270,11 @@ try {
 		frontLook.radius === '4px' && frontLook.dir === 'column' && frontLook.iconW === '32px' && frontLook.iconBg === 'rgb(0, 255, 0)' &&
 		frontLook.iconFill === 'rgb(255, 0, 0)' && frontLook.iconRadius === '50%', JSON.stringify( frontLook ) );
 	check( 'editor and site look the same', JSON.stringify( editorLook ) === JSON.stringify( frontLook ) );
+	const fitFront = await fp.evaluate( iconsFit );
+	check( 'site: icons in circle/rounded backgrounds are not cut off',
+		fitFront.length === 5 && fitFront.every( ( f ) => f.inside && f.svgRadius === '0px' && f.svgW === 48 ), JSON.stringify( fitFront ) );
+	await fp.locator( '.wp-block-wp-free-charts-contact-details' ).nth( 7 ).screenshot( { path: `${ OUT }/05-circle-icons.png` } );
+	await fp.locator( '.wp-block-wp-free-charts-contact-details' ).nth( 8 ).screenshot( { path: `${ OUT }/06-rounded-icons.png` } );
 	check( 'theme colour stays linked (preset var)', r6.style.includes( '--wfc-item-bg:var(--wp--preset--color--base)' ), r6.style );
 	check( 'old per-item Button style still works', r7.items[ 0 ].cls.includes( 'wp-element-button' ) );
 	check( 'hostile CSS values are dropped', ! /url\(|expression|color:red|red;/.test( r8.style ), r8.style );
