@@ -1,0 +1,8 @@
+{
+  "landingPage": "/wp-admin/",
+  "login": true,
+  "steps": [
+    { "step": "activatePlugin", "pluginPath": "wp-free-charts/wp-free-charts.php" },
+    { "step": "runPHP", "code": "<?php require '/wordpress/wp-content/plugins/wp-free-charts/tools/editor-test/acf/image-swap-setup.php';" }
+  ]
+}

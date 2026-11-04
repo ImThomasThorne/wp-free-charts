@@ -16,6 +16,10 @@ add_action(
 				'fields'   => array(
 					$field( 'staff_email', 'email' ),
 					$field( 'staff_phone' ),
+					// Image Swap test: one image field per ACF return format.
+					array( 'key' => 'field_photo_pro', 'name' => 'photo_pro', 'label' => 'photo_pro', 'type' => 'image', 'return_format' => 'array' ),
+					array( 'key' => 'field_photo_fun', 'name' => 'photo_fun', 'label' => 'photo_fun', 'type' => 'image', 'return_format' => 'id' ),
+					array( 'key' => 'field_photo_url', 'name' => 'photo_url', 'label' => 'photo_url', 'type' => 'image', 'return_format' => 'url' ),
 					// A Group: read as contact.email / contact.phone.
 					array(
 						'key'        => 'field_contact',

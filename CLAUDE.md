@@ -8,6 +8,8 @@ bundled plugin-update-checker library.
 - `wp-free-charts/table` (src/table/ → build/table/): Word-style table. See "Table block" below.
 - `wp-free-charts/contact-details` + child `wp-free-charts/contact-item` (src/contact/ → build/contact/,
   build/contact/item/): email, phone, WhatsApp, website and social links with icons. See "Contact block" below.
+- `wp-free-charts/image-swap` (src/image-swap/ → build/image-swap/): image that swaps to a second one on
+  hover, e.g. staff photos in a Query Loop. See "Image Swap block" below.
 
 **Block names are permanent.** The `wp-free-charts/` namespace is stored in every post, so keep it
 even if the plugin is renamed (changing it orphans saved blocks). Renaming the plugin title,
@@ -215,6 +217,27 @@ the `react-jsx-runtime` script handle).
 - Playground quirks: under bursts of parallel requests its SQLite layer sometimes returns empty 500s
   (or "Cannot escape data without an active database connection") for *core* endpoints too; probe one
   request at a time before blaming the plugin. With `--login`, anonymous POSTs get redirected into GETs.
+
+## Image Swap block (src/image-swap/)
+
+- **Dynamic** (`render.php`, save `null`), so markup changes need no deprecations. Two slots, `main*` and
+  `hover*`, each with a source: `featured`, `field` (field name typed in the block) or `media` (picked ID).
+  `fieldFrom` (post|option|author) applies to both. No main image → nothing renders; no hover image (or the
+  same one) → plain image, no `has-hover-image` class, no JS.
+- **ACF is optional.** `includes/image-swap.php` reads fields through `wp_free_charts_field_raw()` (in
+  contact-fields.php, shared with the contact block, same security rules), then accepts an ACF image
+  array (`ID`), an attachment ID or an image URL (`attachment_url_to_postid`). Must pass `wp_attachment_is_image`.
+  Editor preview: batched `POST /wp-free-charts/v1/image-swap` via `useImagePreview.js`.
+- **Behaviour:** mouse hover is CSS only, inside `@media (hover: hover)`. `view.js` adds `.is-swapped` on
+  touch tap and keyboard focus (`:focus-visible`) and removes it after `data-revert` ms (`revertDelay`
+  seconds, default 3). On a linked block the first tap swaps and the second tap (while swapped) follows the
+  link. Unlinked blocks with a hover image get `tabindex="0"`. The hover `<img>` is `aria-hidden` with empty alt;
+  the main alt falls back to the post title.
+- **Shape:** `aspectRatio` ("4/5", custom typed as 5:6) sets `aspect-ratio` on the wrapper and both images
+  fill it with `object-fit` (`scale`: cover|contain). `width` is a CSS length. Both are validated by regex in
+  render.php. Border/radius/shadow/margin are block supports on the wrapper (`overflow: hidden` clips).
+- Test: `tools/editor-test/image-swap.test.mjs <outDir>` against `blueprint-image-swap.json` (ACF) and
+  `blueprint-image-swap-noacf.json` (post meta only); setup in `acf/image-swap-setup.php`.
 
 ## Commands
 

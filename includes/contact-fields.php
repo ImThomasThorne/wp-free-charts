@@ -24,7 +24,8 @@ function wp_free_charts_contact_plain( $html ) {
 }
 
 /**
- * Resolve a contact detail from a custom field.
+ * Read a custom field's raw value (shared by the contact and image swap blocks).
+ * ACF is optional: without it, only plain post meta on 'post' can be read.
  *
  * `$name` may point into a Group (or other array) field with dots:
  * "contact.email" reads the "email" sub-field of the "contact" field.
@@ -33,15 +34,13 @@ function wp_free_charts_contact_plain( $html ) {
  * @param string $from    'post', 'option' or 'author'.
  * @param int    $post_id The post being shown (0 if none).
  * @return array {
- *     @type string $value      Plain-text value ('' when there's none).
- *     @type string $error      '' or a reason code: invalid_name, no_post, no_author,
- *                              needs_acf, not_found, empty, not_text.
+ *     @type mixed  $raw        The value (ACF-formatted when ACF has the field).
+ *     @type string $error      '' or: invalid_name, no_post, no_author, needs_acf, not_found, empty.
  *     @type string $field_type ACF field type when known.
- *     @type array  $suggest    For not_text: dotted names of text sub-values to use instead.
  * }
  */
-function wp_free_charts_contact_resolve_field( $name, $from, $post_id ) {
-	$result = array( 'value' => '', 'error' => '', 'field_type' => '', 'suggest' => array() );
+function wp_free_charts_field_raw( $name, $from, $post_id ) {
+	$result = array( 'raw' => null, 'error' => '', 'field_type' => '' );
 	$fail   = function ( $code ) use ( &$result ) {
 		$result['error'] = $code;
 		return $result;
@@ -102,6 +101,33 @@ function wp_free_charts_contact_resolve_field( $name, $from, $post_id ) {
 		}
 		$raw = $raw[ $key ];
 	}
+
+	$result['raw'] = $raw;
+	return $result;
+}
+
+/**
+ * Resolve a contact detail from a custom field (see wp_free_charts_field_raw()).
+ *
+ * @return array {
+ *     @type string $value      Plain-text value ('' when there's none).
+ *     @type string $error      '' or a reason code: invalid_name, no_post, no_author,
+ *                              needs_acf, not_found, empty, not_text.
+ *     @type string $field_type ACF field type when known.
+ *     @type array  $suggest    For not_text: dotted names of text sub-values to use instead.
+ * }
+ */
+function wp_free_charts_contact_resolve_field( $name, $from, $post_id ) {
+	$read   = wp_free_charts_field_raw( $name, $from, $post_id );
+	$result = array( 'value' => '', 'error' => $read['error'], 'field_type' => $read['field_type'], 'suggest' => array() );
+	if ( '' !== $read['error'] ) {
+		return $result;
+	}
+	$fail = function ( $code ) use ( &$result ) {
+		$result['error'] = $code;
+		return $result;
+	};
+	$raw  = $read['raw'];
 
 	if ( is_object( $raw ) ) {
 		$raw = get_object_vars( $raw );

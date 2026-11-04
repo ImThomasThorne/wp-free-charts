@@ -1,0 +1,111 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "wp-free-charts/image-swap",
+  "version": "1.0.0",
+  "title": "Image Swap",
+  "category": "media",
+  "description": "Shows one image and swaps to another on hover (tap on phones, focus for keyboard users). Images can come from custom fields, so it works inside a Query Loop.",
+  "keywords": [
+    "image",
+    "hover",
+    "swap",
+    "photo",
+    "staff",
+    "team",
+    "rollover",
+    "acf"
+  ],
+  "textdomain": "wp-free-charts",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js",
+  "render": "file:./render.php",
+  "usesContext": [
+    "postId",
+    "postType"
+  ],
+  "attributes": {
+    "mainSource": {
+      "type": "string",
+      "default": "featured"
+    },
+    "mainField": {
+      "type": "string",
+      "default": ""
+    },
+    "mainId": {
+      "type": "number",
+      "default": 0
+    },
+    "hoverSource": {
+      "type": "string",
+      "default": "field"
+    },
+    "hoverField": {
+      "type": "string",
+      "default": ""
+    },
+    "hoverId": {
+      "type": "number",
+      "default": 0
+    },
+    "fieldFrom": {
+      "type": "string",
+      "default": "post"
+    },
+    "aspectRatio": {
+      "type": "string",
+      "default": ""
+    },
+    "width": {
+      "type": "string",
+      "default": ""
+    },
+    "scale": {
+      "type": "string",
+      "default": "cover"
+    },
+    "sizeSlug": {
+      "type": "string",
+      "default": "large"
+    },
+    "linkToPost": {
+      "type": "boolean",
+      "default": false
+    },
+    "revertDelay": {
+      "type": "number",
+      "default": 3
+    },
+    "fade": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "supports": {
+    "html": false,
+    "anchor": true,
+    "align": [
+      "left",
+      "center",
+      "right",
+      "wide",
+      "full"
+    ],
+    "spacing": {
+      "margin": true
+    },
+    "__experimentalBorder": {
+      "color": true,
+      "radius": true,
+      "style": true,
+      "width": true,
+      "__experimentalDefaultControls": {
+        "radius": true
+      }
+    },
+    "shadow": true
+  }
+}

@@ -1,0 +1,91 @@
+/*
+ * Image Swap (front end + editor). The hover image sits exactly on top of the
+ * main one and fades in on mouse hover (pure CSS, only on devices that can
+ * hover) or when view.js adds .is-swapped (tap / keyboard focus).
+ */
+.wp-block-wp-free-charts-image-swap {
+	position: relative;
+	display: block;
+	overflow: hidden;
+	max-width: 100%;
+	box-sizing: border-box;
+	line-height: 0;
+	color: inherit;
+	text-decoration: none;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.wp-block-wp-free-charts-image-swap.aligncenter {
+	margin-left: auto;
+	margin-right: auto;
+}
+
+.wp-block-wp-free-charts-image-swap .wfc-image-swap__img {
+	display: block;
+	width: 100%;
+	height: auto;
+	max-width: none;
+	margin: 0;
+	border-radius: 0;
+	box-shadow: none;
+	object-fit: cover;
+}
+
+/* A set aspect ratio crops (or fits) both images to the same box. */
+.wp-block-wp-free-charts-image-swap.has-aspect-ratio .wfc-image-swap__img {
+	height: 100%;
+}
+
+.wp-block-wp-free-charts-image-swap.is-fit-contain .wfc-image-swap__img {
+	object-fit: contain;
+}
+
+.wp-block-wp-free-charts-image-swap .wfc-image-swap__img--hover {
+	position: absolute;
+	inset: 0;
+	height: 100%;
+	opacity: 0;
+	transition: opacity 0.35s ease;
+	pointer-events: none;
+}
+
+.wp-block-wp-free-charts-image-swap.is-instant .wfc-image-swap__img--hover {
+	transition: none;
+}
+
+@media (hover: hover) {
+	.wp-block-wp-free-charts-image-swap:hover .wfc-image-swap__img--hover {
+		opacity: 1;
+	}
+}
+
+.wp-block-wp-free-charts-image-swap.is-swapped .wfc-image-swap__img--hover {
+	opacity: 1;
+}
+
+.wp-block-wp-free-charts-image-swap:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.wp-block-wp-free-charts-image-swap .wfc-image-swap__img--hover {
+		transition: none;
+	}
+}
+
+/* Editor placeholder when no image is found yet. */
+.wp-block-wp-free-charts-image-swap .wfc-image-swap__placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 160px;
+	height: 100%;
+	padding: 1em;
+	box-sizing: border-box;
+	background: color-mix(in srgb, currentColor 8%, transparent);
+	border: 1px dashed color-mix(in srgb, currentColor 35%, transparent);
+	font-size: 13px;
+	line-height: 1.4;
+	text-align: center;
+}
