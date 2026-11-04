@@ -89,6 +89,16 @@ function wp_free_charts_field_raw( $name, $from, $post_id ) {
 		$raw   = get_post_meta( $post_id, $base, true );
 	}
 	if ( ! $found ) {
+		// ACF only ties a field name to a post once a value has been saved there,
+		// so a real field that was never filled in for this post looks missing.
+		// If ACF knows the field, report it as empty instead.
+		if ( $has_acf && function_exists( 'acf_get_field' ) ) {
+			$known = acf_get_field( $base );
+			if ( is_array( $known ) ) {
+				$result['field_type'] = isset( $known['type'] ) ? (string) $known['type'] : '';
+				return $fail( 'empty' );
+			}
+		}
 		return $fail( 'not_found' );
 	}
 

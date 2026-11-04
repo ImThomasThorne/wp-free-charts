@@ -79,8 +79,14 @@ function slotProblem( preview, slot ) {
 			return sprintf( __( 'No field called "%1$s" was found on %2$s. Use the field name, not its label (ACF shows it under Field Name), and make sure a value has been saved.', 'wp-free-charts' ), slot.field, where );
 		case 'empty':
 			/* translators: 1: field name, 2: where the field was looked for. */
-			return sprintf( __( 'The field "%1$s" is empty on %2$s.', 'wp-free-charts' ), slot.field, where );
+			return sprintf( __( 'The field "%1$s" has no image saved on %2$s. In a Query Loop, this checks the selected post; others may be fine.', 'wp-free-charts' ), slot.field, where );
 		case 'not_image': {
+			// "photo.title" etc. reaches inside an ACF Image field and gets one of its details, not the image.
+			if ( slot.source === 'field' && preview.field_type === 'image' && slot.field.includes( '.' ) ) {
+				const base = slot.field.split( '.' )[ 0 ];
+				/* translators: 1: field name as typed, 2: the image field's name. */
+				return sprintf( __( '"%1$s" picks out one detail of the image (such as its title), not the image itself. Use just "%2$s".', 'wp-free-charts' ), slot.field, base );
+			}
 			const type = preview.field_type ? ` (${ preview.field_type })` : '';
 			return slot.source === 'field'
 				/* translators: 1: field name, 2: ACF field type in brackets. */

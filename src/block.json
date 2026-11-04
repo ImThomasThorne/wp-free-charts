@@ -4,7 +4,7 @@
   "name": "wp-free-charts/chart",
   "version": "1.0.0",
   "title": "WP Free Charts",
-  "category": "media",
+  "category": "wp-free-charts",
   "icon": "chart-bar",
   "description": "Add interactive pie, bar, line and more chart types with spreadsheet data entry, theme colours, and front-end filters.",
   "keywords": [ "chart", "pie", "bar", "line", "graph", "data", "visualization" ],

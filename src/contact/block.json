@@ -4,7 +4,7 @@
   "name": "wp-free-charts/contact-details",
   "version": "1.1.0",
   "title": "Contact Details",
-  "category": "widgets",
+  "category": "wp-free-charts",
   "description": "Email, phone, website and social media links with icons, side by side like buttons. Style every item from here.",
   "keywords": [ "contact", "email", "phone", "call", "social", "facebook", "instagram", "whatsapp", "links", "icons" ],
   "textdomain": "wp-free-charts",

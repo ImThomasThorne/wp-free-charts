@@ -4,7 +4,7 @@
   "name": "wp-free-charts/image-swap",
   "version": "1.0.0",
   "title": "Image Swap",
-  "category": "media",
+  "category": "wp-free-charts",
   "description": "Shows one image and swaps to another on hover (tap on phones, focus for keyboard users). Images can come from custom fields, so it works inside a Query Loop.",
   "keywords": [
     "image",

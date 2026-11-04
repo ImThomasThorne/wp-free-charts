@@ -4,7 +4,7 @@
   "name": "wp-free-charts/table",
   "version": "1.0.0",
   "title": "WP Free Table",
-  "category": "text",
+  "category": "wp-free-charts",
   "icon": "editor-table",
   "description": "A flexible table: merge cells, colour cells, rows and columns, resize columns, and choose how it behaves on mobile.",
   "keywords": [
