@@ -133,6 +133,9 @@ function wp_free_charts_image_swap_register_rest() {
 		array(
 			'methods'             => 'POST',
 			'callback'            => function ( WP_REST_Request $request ) {
+				// Anything other code prints meanwhile (e.g. PHP notices with
+				// WP_DEBUG_DISPLAY on) would corrupt the JSON reply: log it instead.
+				ob_start();
 				$out = array();
 				foreach ( (array) $request['lookups'] as $lookup ) {
 					$post_id = isset( $lookup['post_id'] ) ? (int) $lookup['post_id'] : 0;
@@ -148,6 +151,7 @@ function wp_free_charts_image_swap_register_rest() {
 					}
 					$out[] = $res;
 				}
+				wp_free_charts_discard_output( ob_get_clean(), 'image-swap' );
 				return rest_ensure_response( $out );
 			},
 			'permission_callback' => function () {

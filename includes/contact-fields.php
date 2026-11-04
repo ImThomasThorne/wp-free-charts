@@ -177,6 +177,22 @@ function wp_free_charts_contact_resolve_field_safe( $name, $from, $post_id ) {
 }
 
 /**
+ * The editor preview routes buffer their output, because anything another
+ * plugin, the theme or PHP prints while fields are read (e.g. notices with
+ * WP_DEBUG_DISPLAY on) lands before the JSON and the editor shows "The response
+ * is not a valid JSON response". The stray output is logged instead.
+ *
+ * @param string|false $output What was printed.
+ * @param string       $route  Route name for the log.
+ */
+function wp_free_charts_discard_output( $output, $route ) {
+	if ( is_string( $output ) && '' !== trim( $output ) ) {
+		// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log -- report, don't break the reply.
+		error_log( sprintf( 'WP Free Charts: output while building the %s preview (not sent): %s', $route, substr( wp_strip_all_tags( $output ), 0, 1000 ) ) );
+	}
+}
+
+/**
  * POST /wp-free-charts/v1/contact-fields  { lookups: [ { field, from, post_id }, … ] }
  * Editor preview for every field item on the screen in one request (one
  * request per item could trip shared hosts' limits on simultaneous requests).
@@ -190,6 +206,7 @@ function wp_free_charts_contact_register_rest() {
 		array(
 			'methods'             => 'POST',
 			'callback'            => function ( WP_REST_Request $request ) {
+				ob_start(); // See wp_free_charts_discard_output().
 				$out = array();
 				foreach ( (array) $request['lookups'] as $lookup ) {
 					$post_id = isset( $lookup['post_id'] ) ? (int) $lookup['post_id'] : 0;
@@ -203,6 +220,7 @@ function wp_free_charts_contact_register_rest() {
 						$post_id
 					);
 				}
+				wp_free_charts_discard_output( ob_get_clean(), 'contact-fields' );
 				return rest_ensure_response( $out );
 			},
 			'permission_callback' => function () {

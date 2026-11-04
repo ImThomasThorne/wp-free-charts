@@ -238,6 +238,12 @@ the `react-jsx-runtime` script handle).
   render.php. Border/radius/shadow/margin are block supports on the wrapper (`overflow: hidden` clips).
 - Test: `tools/editor-test/image-swap.test.mjs <outDir>` against `blueprint-image-swap.json` (ACF) and
   `blueprint-image-swap-noacf.json` (post meta only); setup in `acf/image-swap-setup.php`.
+  `blueprint-image-swap-debug.json` turns on WP_DEBUG_DISPLAY (log in as admin/password).
+- Both editor preview routes (`contact-fields`, `image-swap`) wrap their work in `ob_start()` and pass stray
+  output to `wp_free_charts_discard_output()` (logged, not sent), so other code's notices can't turn the
+  reply into "not a valid JSON response". A PHP fatal (e.g. out of memory) can still do it.
+- A field that ACF knows but that was never saved on the post reports `empty`, not `not_found`
+  (`acf_get_field()` check in `wp_free_charts_field_raw()`).
 
 ## Commands
 
